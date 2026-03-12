@@ -1,0 +1,87 @@
+- App.tsx
+- Attributions.md
+- FileStructure.md
+- Guidelines.md
+- components
+  - Dashboard.tsx
+  - DocumentAnalysisPage.tsx
+  - DocumentTypesPage.tsx
+  - DocumentUploadPage.tsx
+  - DocumentsPage.tsx
+  - DocumentsSidebar.tsx
+  - DualListSelector.tsx
+  - Layout.tsx
+  - LayoutWrapper.tsx
+  - Login.tsx
+  - LoginPage.tsx
+  - ProtectedRoute.tsx
+  - QuestionnairesPage.tsx
+  - QuestionsPage.tsx
+  - StyleGuidePage.tsx
+  - TarefasPage.tsx
+  - UserManagement.tsx
+  - UserTeamRoleManagement.tsx
+  - figma
+    - ImageWithFallback.tsx
+  - ui
+    - accordion.tsx
+    - alert-dialog.tsx
+    - alert.tsx
+    - aspect-ratio.tsx
+    - avatar.tsx
+    - badge.tsx
+    - breadcrumb.tsx
+    - button.tsx
+    - calendar.tsx
+    - card.tsx
+    - carousel.tsx
+    - chart.tsx
+    - checkbox.tsx
+    - collapsible.tsx
+    - command.tsx
+    - context-menu.tsx
+    - dialog.tsx
+    - drawer.tsx
+    - dropdown-menu.tsx
+    - form.tsx
+    - hover-card.tsx
+    - input-otp.tsx
+    - input.tsx
+    - label.tsx
+    - menubar.tsx
+    - navigation-menu.tsx
+    - pagination.tsx
+    - popover.tsx
+    - progress.tsx
+    - radio-group.tsx
+    - resizable.tsx
+    - scroll-area.tsx
+    - select.tsx
+    - separator.tsx
+    - sheet.tsx
+    - sidebar.tsx
+    - skeleton.tsx
+    - slider.tsx
+    - sonner.tsx
+    - switch.tsx
+    - table.tsx
+    - tabs.tsx
+    - textarea.tsx
+    - toggle-group.tsx
+    - toggle.tsx
+    - tooltip.tsx
+    - use-keyboard-shortcuts.ts
+    - use-mobile.ts
+    - utils.ts
+- config
+  - routes.ts
+- hooks
+  - useAuth.ts
+  - useNavigation.ts
+- imports
+  - 1440WLight.tsx
+  - Group3466582.tsx
+  - svg-19rgvx9nlp.ts
+  - svg-pub605q2s6.ts
+- styles
+  - globals.css

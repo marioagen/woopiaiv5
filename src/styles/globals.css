@@ -1,0 +1,990 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 14px;
+  --background: #f8f9fb;
+  --foreground: #323338;
+  --card: #ffffff;
+  --card-foreground: #323338;
+  --popover: #ffffff;
+  --popover-foreground: #323338;
+  --primary: #0073ea;
+  --primary-foreground: #ffffff;
+  --secondary: #e1e9f8;
+  --secondary-foreground: #323338;
+  --muted: #f5f7fa;
+  --muted-foreground: #676879;
+  --accent: #e1e9f8;
+  --accent-foreground: #0073ea;
+  --destructive: #d83a52;
+  --destructive-foreground: #ffffff;
+  --border: #d0d4d9;
+  --input: transparent;
+  --input-background: #ffffff;
+  --switch-background: #cbced4;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #0073ea;
+  --chart-1: #0073ea;
+  --chart-2: #00d2d2;
+  --chart-3: #bb3354;
+  --chart-4: #ffcb00;
+  --chart-5: #a25ddc;
+  --radius: 0.5rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #323338;
+  --sidebar-primary: #0073ea;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f5f7fa;
+  --sidebar-accent-foreground: #323338;
+  --sidebar-border: #d0d4d9;
+  --sidebar-ring: #0073ea;
+  
+  /* Woopi-AI specific colors */
+  --woopi-ai-blue: #0073ea;
+  --woopi-ai-light-blue: #e1e9f8;
+  --woopi-ai-dark-blue: #0060c7;
+  --woopi-ai-gray: #676879;
+  --woopi-ai-light-gray: #f5f7fa;
+  --woopi-ai-dark-gray: #323338;
+  --woopi-ai-border: #d0d4d9;
+  --woopi-ai-success: #00d2d2;
+  --woopi-ai-warning: #ffcb00;
+  --woopi-ai-orange: #fd7e14;
+  --woopi-ai-light-orange: #fff2e6;
+  --woopi-ai-dark-orange: #e56a00;
+  --woopi-ai-error: #d83a52;
+  --woopi-ai-purple: #a25ddc;
+}
+
+.dark {
+  /* Monday.com-inspired dark palette */
+  --background: #1f2132;
+  --foreground: #d5d8e0;
+  --card: #292f4c;
+  --card-foreground: #d5d8e0;
+  --popover: #292f4c;
+  --popover-foreground: #d5d8e0;
+  --primary: #0073ea;
+  --primary-foreground: #ffffff;
+  --secondary: #2d3354;
+  --secondary-foreground: #d5d8e0;
+  --muted: #2d3354;
+  --muted-foreground: #9196b0;
+  --accent: #2d3354;
+  --accent-foreground: #d5d8e0;
+  --destructive: #ff6b81;
+  --destructive-foreground: #ffffff;
+  --border: #393e5c;
+  --input: #2d3354;
+  --input-background: #2d3354;
+  --switch-background: #393e5c;
+  --ring: #0073ea;
+  --sidebar: #1a1b2e;
+  --sidebar-foreground: #d5d8e0;
+  --sidebar-primary: #0073ea;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2d3354;
+  --sidebar-accent-foreground: #d5d8e0;
+  --sidebar-border: #393e5c;
+  --sidebar-ring: #0073ea;
+
+  /* Woopi-AI overrides for dark mode */
+  --woopi-ai-blue: #0073ea;
+  --woopi-ai-light-blue: #1a3a6b;
+  --woopi-ai-dark-blue: #0060c7;
+  --woopi-ai-gray: #9196b0;
+  --woopi-ai-light-gray: #2d3354;
+  --woopi-ai-dark-gray: #d5d8e0;
+  --woopi-ai-border: #393e5c;
+  --woopi-ai-success: #00d2d2;
+  --woopi-ai-warning: #ffcb00;
+  --woopi-ai-orange: #fd7e14;
+  --woopi-ai-light-orange: #3a2510;
+  --woopi-ai-dark-orange: #e56a00;
+  --woopi-ai-error: #ff6b81;
+  --woopi-ai-purple: #a25ddc;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  
+  /* Woopi-AI colors - Fixed mappings for Tailwind utilities */
+  --color-woopi-ai-blue: var(--woopi-ai-blue);
+  --color-woopi-ai-light-blue: var(--woopi-ai-light-blue);
+  --color-woopi-ai-dark-blue: var(--woopi-ai-dark-blue);
+  --color-woopi-ai-gray: var(--woopi-ai-gray);
+  --color-woopi-ai-light-gray: var(--woopi-ai-light-gray);
+  --color-woopi-ai-dark-gray: var(--woopi-ai-dark-gray);
+  --color-woopi-ai-border: var(--woopi-ai-border);
+  --color-woopi-ai-success: var(--woopi-ai-success);
+  --color-woopi-ai-warning: var(--woopi-ai-warning);
+  --color-woopi-ai-orange: var(--woopi-ai-orange);
+  --color-woopi-ai-light-orange: var(--woopi-ai-light-orange);
+  --color-woopi-ai-dark-orange: var(--woopi-ai-dark-orange);
+  --color-woopi-ai-error: var(--woopi-ai-error);
+  --color-woopi-ai-purple: var(--woopi-ai-purple);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  }
+}
+
+/**
+ * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
+ */
+@layer base {
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      font-size: 2rem;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.2;
+      color: var(--woopi-ai-dark-gray);
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.3;
+      color: var(--woopi-ai-dark-gray);
+    }
+
+    h3 {
+      font-size: 1.25rem;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.4;
+      color: var(--woopi-ai-dark-gray);
+    }
+
+    h4 {
+      font-size: 1rem;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+      color: var(--woopi-ai-dark-gray);
+    }
+
+    p {
+      font-size: 0.875rem;
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+      color: var(--woopi-ai-gray);
+    }
+
+    label {
+      font-size: 0.875rem;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+      color: var(--woopi-ai-dark-gray);
+    }
+
+    button {
+      font-size: 0.875rem;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: 0.875rem;
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+      border: 1px solid var(--woopi-ai-border);
+      border-radius: var(--radius);
+    }
+  }
+}
+
+html {
+  font-size: var(--font-size);
+}
+
+/* Custom Woopi-AI style utilities */
+.woopi-ai-card {
+  @apply bg-card rounded-lg border border-woopi-ai-border shadow-sm;
+}
+
+.woopi-ai-button-primary {
+  @apply bg-woopi-ai-blue hover:bg-woopi-ai-dark-blue text-white;
+}
+
+.woopi-ai-button-secondary {
+  @apply bg-woopi-ai-light-blue hover:bg-woopi-ai-light-blue/80 text-woopi-ai-blue dark:hover:bg-[#1a3a6b];
+}
+
+.woopi-ai-button-warning {
+  @apply bg-woopi-ai-warning hover:bg-yellow-500 text-white dark:hover:bg-yellow-600;
+}
+
+.woopi-ai-button-orange {
+  @apply bg-woopi-ai-orange hover:bg-woopi-ai-dark-orange text-white;
+}
+
+.woopi-ai-button-success {
+  @apply bg-woopi-ai-success hover:bg-teal-500 text-white dark:hover:bg-teal-600;
+}
+
+.woopi-ai-button-error {
+  @apply bg-woopi-ai-error hover:bg-red-600 text-white dark:hover:bg-red-700;
+}
+
+.woopi-ai-text-primary {
+  @apply text-woopi-ai-dark-gray;
+}
+
+.woopi-ai-text-secondary {
+  @apply text-woopi-ai-gray;
+}
+
+.woopi-ai-border {
+  @apply border-woopi-ai-border;
+}
+
+.woopi-ai-bg-light {
+  @apply bg-woopi-ai-light-gray;
+}
+
+/* Badge utilities */
+.woopi-ai-badge-primary {
+  @apply bg-woopi-ai-blue text-white;
+}
+
+.woopi-ai-badge-secondary {
+  @apply bg-woopi-ai-light-blue text-woopi-ai-blue;
+}
+
+.woopi-ai-badge-success {
+  @apply bg-woopi-ai-success text-white;
+}
+
+.woopi-ai-badge-warning {
+  @apply bg-woopi-ai-warning text-white;
+}
+
+.woopi-ai-badge-orange {
+  @apply bg-woopi-ai-orange text-white;
+}
+
+.woopi-ai-badge-error {
+  @apply bg-woopi-ai-error text-white;
+}
+
+.woopi-ai-badge-purple {
+  @apply bg-woopi-ai-purple text-white;
+}
+
+/* Status indicator utilities */
+.woopi-ai-status-active {
+  @apply bg-woopi-ai-success text-white;
+}
+
+.woopi-ai-status-pending {
+  @apply bg-woopi-ai-orange text-white;
+}
+
+.woopi-ai-status-warning {
+  @apply bg-woopi-ai-warning text-white;
+}
+
+.woopi-ai-status-inactive {
+  @apply bg-woopi-ai-gray text-white;
+}
+
+.woopi-ai-status-error {
+  @apply bg-woopi-ai-error text-white;
+}
+
+.woopi-ai-status-suspended {
+  @apply bg-woopi-ai-error text-white;
+}
+
+/* Responsive utilities for mobile cards */
+.mobile-card-item {
+  @apply border-b border-woopi-ai-border last:border-b-0 py-4 px-0;
+}
+
+/* Table scroll utilities */
+.table-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: var(--woopi-ai-border) transparent;
+}
+
+.table-scroll-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-scroll-container::-webkit-scrollbar-track {
+  background: var(--woopi-ai-light-gray);
+  border-radius: 4px;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--woopi-ai-border);
+  border-radius: 4px;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: var(--woopi-ai-gray);
+}
+
+.mobile-card-row {
+  @apply flex justify-between items-start mb-2 last:mb-0;
+}
+
+.mobile-card-label {
+  @apply text-xs text-woopi-ai-gray font-medium min-w-20;
+}
+
+.mobile-card-value {
+  @apply text-sm text-woopi-ai-dark-gray text-right flex-1;
+}
+
+.mobile-card-actions {
+  @apply flex justify-end pt-3 border-t border-woopi-ai-border/50 mt-3;
+}
+
+/* User Management page specific layout - matches DocumentsPage margins */
+.user-management-layout {
+  @apply p-4 md:p-6 space-y-6;
+  max-width: none;
+  margin: 0;
+}
+
+/* Node Configuration Form - Campos com bordas cinza claro */
+.node-config-form input,
+.node-config-form textarea,
+.node-config-form select,
+.node-config-form [role="combobox"] {
+  border: 1px solid var(--woopi-ai-border) !important;
+  background-color: var(--input-background) !important;
+}
+
+.node-config-form input:focus,
+.node-config-form textarea:focus,
+.node-config-form select:focus,
+.node-config-form [role="combobox"]:focus {
+  border-color: var(--woopi-ai-blue) !important;
+  outline: none;
+}
+
+/* Line clamp utilities */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Circular flag icons */
+.flag-icon {
+  @apply w-6 h-6 rounded-full bg-cover bg-center bg-no-repeat;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.flag-brazil {
+  background-image: linear-gradient(to bottom, #009c3b 0%, #009c3b 45%, #ffdf00 45%, #ffdf00 55%, #009c3b 55%, #009c3b 100%);
+  position: relative;
+}
+
+.flag-brazil::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60%;
+  height: 60%;
+  background: #002776;
+  border-radius: 50%;
+}
+
+.flag-usa {
+  background: linear-gradient(to bottom, 
+    #b22234 0%, #b22234 7.7%, 
+    white 7.7%, white 15.4%,
+    #b22234 15.4%, #b22234 23.1%,
+    white 23.1%, white 30.8%,
+    #b22234 30.8%, #b22234 38.5%,
+    white 38.5%, white 46.2%,
+    #b22234 46.2%, #b22234 53.9%,
+    white 53.9%, white 61.6%,
+    #b22234 61.6%, #b22234 69.3%,
+    white 69.3%, white 77%,
+    #b22234 77%, #b22234 84.7%,
+    white 84.7%, white 92.4%,
+    #b22234 92.4%, #b22234 100%);
+  position: relative;
+}
+
+.flag-usa::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 54%;
+  background: #3c3b6e;
+  border-radius: 24px 0 0 0;
+}
+
+.flag-spain {
+  background: linear-gradient(to bottom, 
+    #c60b1e 0%, #c60b1e 25%, 
+    #ffc400 25%, #ffc400 75%, 
+    #c60b1e 75%, #c60b1e 100%);
+}
+
+/* ========================================
+   React Flow Critical Styles
+   ======================================== */
+
+/* React Flow Container */
+.react-flow {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+}
+
+/* Pane - camada de fundo para pan/zoom - DEVE FICAR ATRÁS DE TUDO */
+.react-flow__pane {
+  cursor: move;
+  z-index: 1 !important;
+  pointer-events: all;
+}
+
+.react-flow__renderer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+
+.react-flow__viewport {
+  transform-origin: 0 0;
+  z-index: 2;
+}
+
+/* Edges - abaixo dos nós */
+.react-flow__edges {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  z-index: 2;
+}
+
+/* Nodes - acima de edges e pane */
+.react-flow__nodes {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  z-index: 10 !important;
+  pointer-events: none;
+}
+
+.react-flow__node {
+  position: absolute;
+  user-select: none;
+  pointer-events: all !important;
+  transform-origin: 0 0;
+  box-sizing: border-box;
+  cursor: grab;
+  z-index: 10;
+}
+
+/* Reset cursor para elementos filhos do nó */
+.react-flow__node * {
+  cursor: auto;
+}
+
+/* Força cursor pointer em botões e elementos interativos dentro dos nós */
+/* IMPORTANTE: Não aplicar a botões que são Handles do ReactFlow */
+.react-flow__node button:not(.react-flow__handle),
+.react-flow__node a:not(.react-flow__handle),
+.react-flow__node [role="button"]:not(.react-flow__handle) {
+  cursor: pointer !important;
+  position: relative;
+  z-index: 100 !important;
+  pointer-events: auto !important;
+}
+
+/* Classe especial nodrag para elementos interativos */
+/* IMPORTANTE: Não aplicar aos Handles */
+.react-flow__node .nodrag:not(.react-flow__handle) {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 50 !important;
+}
+
+.react-flow__node.dragging {
+  cursor: grabbing;
+}
+
+.react-flow__node.dragging * {
+  cursor: grabbing !important;
+}
+
+.react-flow__node.selected {
+  z-index: 10;
+}
+
+/* Edges */
+.react-flow__edge {
+  pointer-events: all;
+  cursor: pointer;
+}
+
+.react-flow__edge path {
+  fill: none;
+  pointer-events: stroke;
+}
+
+.react-flow__edge-path {
+  stroke: #3b82f6;
+  stroke-width: 2;
+  fill: none;
+}
+
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:focus .react-flow__edge-path,
+.react-flow__edge:focus-visible .react-flow__edge-path {
+  stroke: #0073ea;
+  stroke-width: 3;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: #0073ea;
+  stroke-width: 3;
+}
+
+/* Edge interaction area (invisible but clickable) */
+.react-flow__edge-interaction {
+  stroke: transparent;
+  fill: none;
+  stroke-width: 20;
+  pointer-events: stroke;
+}
+
+/* Handles (connection points) */
+.react-flow__handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #1a192b;
+  border: 2px solid white;
+  border-radius: 100%;
+  pointer-events: all;
+  cursor: crosshair;
+  z-index: 10;
+}
+
+.react-flow__handle-top {
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.react-flow__handle-right {
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.react-flow__handle-bottom {
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.react-flow__handle-left {
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.react-flow__handle.connecting {
+  background: #0073ea;
+  width: 14px;
+  height: 14px;
+}
+
+.react-flow__handle.valid {
+  background: #00d2d2;
+  width: 14px;
+  height: 14px;
+}
+
+.react-flow__handle:hover {
+  background: #0073ea;
+  width: 14px;
+  height: 14px;
+  border-width: 3px;
+}
+
+/* Controls */
+.react-flow__controls {
+  position: absolute;
+  z-index: 5;
+  bottom: 10px;
+  left: 10px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+}
+
+.react-flow__controls-button {
+  border: none;
+  background: white;
+  border-bottom: 1px solid #eee;
+  box-sizing: content-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  user-select: none;
+  padding: 5px;
+}
+
+.react-flow__controls-button:hover {
+  background: #f4f4f4;
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none;
+}
+
+.react-flow__controls-button svg {
+  width: 100%;
+  max-width: 16px;
+  max-height: 16px;
+}
+
+/* MiniMap */
+.react-flow__minimap {
+  position: absolute;
+  z-index: 5;
+  bottom: 10px;
+  right: 10px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.react-flow__minimap-mask {
+  fill: rgba(0, 0, 0, 0.1);
+}
+
+.react-flow__minimap-node {
+  fill: #e2e2e2;
+  stroke: none;
+}
+
+/* Background */
+.react-flow__background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+
+.react-flow__background pattern circle {
+  fill: currentColor;
+}
+
+/* Edge Label Renderer */
+.react-flow__edgelabel-renderer {
+  position: absolute;
+  width: 100%!important;
+  height: 100%!important;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  user-select: none;
+  z-index: 4;
+}
+
+/* Allow pointer events on children */
+.react-flow__edgelabel-renderer > * {
+  pointer-events: auto;
+}
+
+/* Selection */
+.react-flow__selection {
+  position: absolute;
+  z-index: 6;
+  background: rgba(0, 115, 234, 0.08);
+  border: 1px solid rgba(0, 115, 234, 0.6);
+}
+
+.react-flow__nodesselection-rect {
+  position: absolute;
+  pointer-events: none;
+  transform-origin: left top;
+}
+
+/* Attribution (opcional - pode ser oculto) */
+.react-flow__attribution {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 2px 6px;
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.5);
+  z-index: 1000;
+}
+
+/* Panel (container genérico para Controls e MiniMap) */
+.react-flow__panel {
+  position: absolute;
+  z-index: 5;
+  margin: 15px;
+}
+
+.react-flow__panel.top {
+  top: 0;
+}
+
+.react-flow__panel.bottom {
+  bottom: 0;
+}
+
+.react-flow__panel.left {
+  left: 0;
+}
+
+.react-flow__panel.right {
+  right: 0;
+}
+
+.react-flow__panel.center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* ========================================
+   Document Analysis Pages Override
+   ======================================== */
+
+/* Remove scroll externo nas páginas de análise com documento */
+.document-analysis-page,
+.document-extraction-page {
+  overflow: hidden !important;
+  height: 100%;
+}
+
+/* Força o main do Layout a não ter scroll quando contém páginas de análise */
+main:has(.document-analysis-page),
+main:has(.document-extraction-page) {
+  overflow: hidden !important;
+}
+
+/* ========================================
+   Home Page Animations
+   ======================================== */
+
+/* Fade In Up Animation for cards */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+/* Fade In Scale Animation for WhatsApp button */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fadeInScale {
+  animation: fadeInScale 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+/* ================================================================
+   DARK MODE - GUIA DE REFERENCIA PARA DESENVOLVEDORES
+   Paleta inspirada no Monday.com
+   ================================================================
+
+   ┌──────────────────────────────────────────────────────────────┐
+   │  FUNDOS (Backgrounds)                                       │
+   ├──────────────────────────────────────────────────────────────┤
+   │  Pagina / Fundo principal ......... #1f2132  (bg-[#1f2132]) │
+   │  Sidebar .......................... #1a1b2e  (bg-[#1a1b2e]) │
+   │  Cards / Paineis / Modais ......... #292f4c  (bg-[#292f4c]) │
+   │  Containers secundarios / Muted ... #2d3354  (bg-[#2d3354]) │
+   └──────────────────────────────────────────────────────────────┘
+
+   ┌──────────────────────────────────────────────────────────────┐
+   │  BORDAS (Borders)                                           │
+   ├──────────────────────────────────────────────────────────────┤
+   │  Borda principal .................. #393e5c  (border-[#393e5c]) │
+   │  (Substitui border-gray-100/200/300 no dark mode)           │
+   └──────────────────────────────────────────────────────────────┘
+
+   ┌──────────────────────────────────────────────────────────────┐
+   │  TEXTOS (Typography)                                        │
+   ├──────────────────────────────────────────────────────────────┤
+   │  Titulos / Texto principal ........ #d5d8e0  (text-[#d5d8e0]) │
+   │  Headings enfatizados ............. #e2e4ea  (text-[#e2e4ea]) │
+   │  Texto secundario ................. #b0b4c8  (text-[#b0b4c8]) │
+   │  Texto sutil / Labels ............. #9196b0  (text-[#9196b0]) │
+   │  Texto desabilitado / Placeholder . #7a7f9d  (text-[#7a7f9d]) │
+   └──────────────────────────────────────────────────────────────┘
+
+   ┌──────────────────────────────────────────────────────────────┐
+   │  INTERACOES (Hover / Selected / Focus)                      │
+   ├──────────────────────────────────────────────────────────────┤
+   │  Hover em cards/botoes ............ #393e5c  (hover:bg-[#393e5c]) │
+   │  Hover em areas sutis ............. #2d3354  (hover:bg-[#2d3354]) │
+   │  Item selecionado (blue) .......... blue-900/20  (bg-blue-900/20) │
+   │  Hover texto cinza→claro .......... #d5d8e0  (hover:text-[#d5d8e0]) │
+   └──────────────────────────────────────────────────────────────┘
+
+   ┌──────────────────────────────────────────────────────────────┐
+   │  MARCA / BRAND                                              │
+   ├──────────────────────────────────────────────────────────────┤
+   │  Azul primario (igual nos 2 modos)  #0073ea                 │
+   │  Azul escuro (hover) .............. #0060c7                  │
+   └──────────────────────────────────────────────────────────────┘
+
+   ┌──────────────────────────────────────────────────────────────┐
+   │  BADGES COLORIDOS - Padrao dark mode                        │
+   ├──────────────────────────────────────────────────────────────┤
+   │  Fundo: dark:bg-{cor}-900/40                                │
+   │  Texto: dark:text-{cor}-300                                 │
+   │                                                              │
+   │  Exemplos:                                                   │
+   │  Emerald ... dark:bg-emerald-900/40 dark:text-emerald-300   │
+   │  Blue ...... dark:bg-blue-900/40    dark:text-blue-300      │
+   │  Red ....... dark:bg-red-900/40     dark:text-red-300       │
+   │  Amber ..... dark:bg-amber-900/40   dark:text-amber-300     │
+   │  Purple .... dark:bg-purple-900/40  dark:text-purple-300    │
+   │  Orange .... dark:bg-orange-900/40  dark:text-orange-300    │
+   │  Cyan ...... dark:bg-cyan-900/40    dark:text-cyan-300      │
+   │  Green ..... dark:bg-green-900/40   dark:text-green-300     │
+   │  Yellow .... dark:bg-yellow-900/40  dark:text-yellow-300    │
+   │  Gray ...... dark:bg-gray-700/40    dark:text-gray-300      │
+   └──────────────────────────────────────────────────────────────┘
+
+   ┌──────────────────────────────────────────────────────────────┐
+   │  MAPEAMENTO RAPIDO: Light → Dark                            │
+   ├──────────────────────────────────────────────────────────────┤
+   │  bg-white ................ → dark:bg-[#292f4c]              │
+   │  bg-gray-50 .............. → dark:bg-[#1f2132]              │
+   │  bg-gray-100 ............. → dark:bg-[#2d3354]              │
+   │  border-gray-100/200/300 . → dark:border-[#393e5c]          │
+   │  text-gray-400 ........... → dark:text-[#7a7f9d]            │
+   │  text-gray-500 ........... → dark:text-[#9196b0]            │
+   │  text-gray-600 ........... → dark:text-[#b0b4c8]            │
+   │  text-gray-700 ........... → dark:text-[#d5d8e0]            │
+   │  text-gray-800 ........... → dark:text-[#e2e4ea]            │
+   │  hover:bg-gray-50 ........ → dark:hover:bg-[#2d3354]        │
+   │  hover:bg-gray-100 ....... → dark:hover:bg-[#393e5c]        │
+   │  bg-blue-50 (selected) ... → dark:bg-blue-900/20            │
+   │  bg-{cor}-50/50 (cards) .. → dark:bg-{cor}-900/20           │
+   │  bg-{cor}-100 (badges) ... → dark:bg-{cor}-900/40           │
+   │  text-{cor}-700 (badges) . → dark:text-{cor}-300            │
+   │  text-{cor}-800 (badges) . → dark:text-{cor}-300            │
+   └──────────────────────────────────────────────────────────────┘
+
+   ┌──────────────────────────────────────────────────────────────┐
+   │  VARIAVEIS SEMANTICAS (ja alternam automaticamente)         │
+   ├──────────────────────────────────────────────────────────────┤
+   │  Classes que NAO precisam de dark: adicional:               │
+   │  • text-woopi-ai-gray                                       │
+   │  • text-woopi-ai-dark-gray                                  │
+   │  • border-woopi-ai-border                                   │
+   │  • bg-woopi-ai-light-gray                                   │
+   │  • bg-woopi-ai-light-blue                                   │
+   │  • bg-card / text-card-foreground                           │
+   │  • bg-background / text-foreground                          │
+   │  • bg-muted / text-muted-foreground                         │
+   └──────────────────────────────────────────────────────────────┘
+
+   ┌──────────────────────────────────────────────────────────────┐
+   │  NOTAS IMPORTANTES                                          │
+   ├──────────────────────────────────────────────────────────────┤
+   │  • O custom variant e: @custom-variant dark (&:is(.dark *)) │
+   │  • Classe "dark" e aplicada no <html> via hook useDarkMode  │
+   │  • Para React Flow (inline styles), usar o hook useDarkMode │
+   │    e alternar cores via isDark condicionalmente              │
+   │  • Button variant="outline" aplica dark:border-input e      │
+   │    dark:bg-input/30 - adicionar dark:border-* explicito     │
+   │    quando precisar bordas coloridas customizadas             │
+   └──────────────────────────────────────────────────────────────┘
+*/
