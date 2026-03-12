@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
@@ -20,7 +20,13 @@ import {
   Eye, 
   EyeOff,
   Download,
-  AlertCircle
+  AlertCircle,
+  Play,
+  Loader2,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Globe
 } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 import {
@@ -58,6 +64,104 @@ interface APITemplate {
   body: string;
 }
 
+interface TestResponse {
+  status: number;
+  statusText: string;
+  time: number;
+  headers: Record<string, string>;
+  body: string;
+}
+
+const VARIABLE_REGEX = /\{\{([^}]+)\}\}/g;
+
+function extractVariables(url: string, params: QueryParam[], hdrs: Header[], bodyStr: string): string[] {
+  const all = [url, bodyStr, ...params.map(p => `${p.key} ${p.value}`), ...hdrs.map(h => `${h.key} ${h.value}`)].join(' ');
+  const found = new Set<string>();
+  let match: RegExpExecArray | null;
+  const regex = new RegExp(VARIABLE_REGEX.source, 'g');
+  while ((match = regex.exec(all)) !== null) {
+    found.add(match[1].trim());
+  }
+  return Array.from(found);
+}
+
+function resolveTemplate(template: string, values: Record<string, string>): string {
+  return template.replace(VARIABLE_REGEX, (_, varName) => values[varName.trim()] ?? `{{${varName.trim()}}}`);
+}
+
+function generateMockResponse(method: HTTPMethod, resolvedUrl: string, resolvedBody: string): TestResponse {
+  const time = Math.floor(Math.random() * 500) + 150;
+  const baseHeaders: Record<string, string> = {
+    'Content-Type': 'application/json; charset=utf-8',
+    'X-Request-Id': crypto.randomUUID?.() ?? Math.random().toString(36).slice(2),
+    'Date': new Date().toUTCString(),
+    'Cache-Control': 'no-cache',
+    'Access-Control-Allow-Origin': '*',
+  };
+
+  switch (method) {
+    case 'GET':
+      return {
+        status: 200,
+        statusText: 'OK',
+        time,
+        headers: { ...baseHeaders, 'X-Total-Count': '42' },
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: 1,
+            name: 'Exemplo de Registro',
+            email: 'exemplo@woopi.ai',
+            status: 'active',
+            createdAt: new Date().toISOString(),
+          },
+          meta: { page: 1, perPage: 10, total: 42 },
+        }, null, 2),
+      };
+    case 'POST': {
+      let parsed: Record<string, unknown> = {};
+      try { parsed = JSON.parse(resolvedBody); } catch { /* empty */ }
+      return {
+        status: 201,
+        statusText: 'Created',
+        time,
+        headers: { ...baseHeaders, 'Location': `${resolvedUrl}/1` },
+        body: JSON.stringify({
+          success: true,
+          data: { id: Math.floor(Math.random() * 9000) + 1000, ...parsed, createdAt: new Date().toISOString() },
+          message: 'Recurso criado com sucesso',
+        }, null, 2),
+      };
+    }
+    case 'PUT':
+    case 'PATCH': {
+      let parsed: Record<string, unknown> = {};
+      try { parsed = JSON.parse(resolvedBody); } catch { /* empty */ }
+      return {
+        status: 200,
+        statusText: 'OK',
+        time,
+        headers: baseHeaders,
+        body: JSON.stringify({
+          success: true,
+          data: { id: 1, ...parsed, updatedAt: new Date().toISOString() },
+          message: 'Recurso atualizado com sucesso',
+        }, null, 2),
+      };
+    }
+    case 'DELETE':
+      return {
+        status: 204,
+        statusText: 'No Content',
+        time,
+        headers: { 'Date': baseHeaders['Date'], 'X-Request-Id': baseHeaders['X-Request-Id'] },
+        body: '',
+      };
+    default:
+      return { status: 200, statusText: 'OK', time, headers: baseHeaders, body: '{}' };
+  }
+}
+
 export function APITemplateFormPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -80,6 +184,49 @@ export function APITemplateFormPage() {
   // External consult state
   const [enableExternalConsult, setEnableExternalConsult] = useState(false);
   const [externalConsultDescription, setExternalConsultDescription] = useState('');
+
+  // Test panel state
+  const [rightColumnTab, setRightColumnTab] = useState('body');
+  const [variableValues, setVariableValues] = useState<Record<string, string>>({});
+  const [testResponse, setTestResponse] = useState<TestResponse | null>(null);
+  const [isTesting, setIsTesting] = useState(false);
+
+  const detectedVariables = useMemo(
+    () => extractVariables(endpointUrl, queryParams, headers, body),
+    [endpointUrl, queryParams, headers, body]
+  );
+
+  const resolvedUrl = useMemo(() => {
+    let resolved = resolveTemplate(endpointUrl, variableValues);
+    const resolvedParams = queryParams
+      .filter(p => p.key.trim())
+      .map(p => `${encodeURIComponent(resolveTemplate(p.key, variableValues))}=${encodeURIComponent(resolveTemplate(p.value, variableValues))}`)
+      .join('&');
+    if (resolvedParams) resolved += (resolved.includes('?') ? '&' : '?') + resolvedParams;
+    return resolved;
+  }, [endpointUrl, queryParams, variableValues]);
+
+  const updateVariableValue = useCallback((varName: string, value: string) => {
+    setVariableValues(prev => ({ ...prev, [varName]: value }));
+  }, []);
+
+  const handleTestAPI = useCallback(async () => {
+    if (!endpointUrl.trim()) {
+      toast.error('Preencha a URL antes de testar');
+      return;
+    }
+    setIsTesting(true);
+    setTestResponse(null);
+
+    const delay = Math.floor(Math.random() * 500) + 300;
+    await new Promise(resolve => setTimeout(resolve, delay));
+
+    const resolvedBody = resolveTemplate(body, variableValues);
+    const response = generateMockResponse(method, resolvedUrl, resolvedBody);
+    setTestResponse(response);
+    setIsTesting(false);
+    toast.success(`Simulação concluída — ${response.status} ${response.statusText}`);
+  }, [endpointUrl, body, variableValues, method, resolvedUrl]);
 
   // Load template if editing
   useEffect(() => {
@@ -515,56 +662,204 @@ export function APITemplateFormPage() {
             </Card>
           </div>
 
-          {/* Right Column - Request Body */}
+          {/* Right Column - Body & Test */}
           <div>
             <Card className="woopi-ai-card h-full">
               <CardContent className="p-6 h-full flex flex-col">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-lg font-semibold text-woopi-ai-dark-gray">
-                      Request Body
-                    </h2>
-                    <p className="text-xs text-woopi-ai-gray mt-1">
-                      Supports {'{{'} variables {'}}'}
-                    </p>
-                  </div>
-                  {bodyError && (
-                    <Badge variant="destructive" className="flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      Invalid JSON
-                    </Badge>
-                  )}
-                </div>
+                <Tabs value={rightColumnTab} onValueChange={setRightColumnTab} className="flex flex-col h-full">
+                  <TabsList className="grid w-full grid-cols-2 dark:bg-[#2d3354] mb-4">
+                    <TabsTrigger value="body" className="dark:data-[state=active]:bg-[#393e5c] dark:text-[#9196b0] dark:data-[state=active]:text-[#d5d8e0]">
+                      Body
+                    </TabsTrigger>
+                    <TabsTrigger value="test" className="dark:data-[state=active]:bg-[#393e5c] dark:text-[#9196b0] dark:data-[state=active]:text-[#d5d8e0]">
+                      <Play className="w-3.5 h-3.5 mr-1.5" />
+                      Teste
+                    </TabsTrigger>
+                  </TabsList>
 
-                <div className="flex-1 relative">
-                  <Textarea
-                    placeholder='{\n  "key": "{{variable}}"\n}'
-                    value={body}
-                    onChange={(e) => setBody(e.target.value)}
-                    className={`font-mono text-sm h-full min-h-[400px] resize-none dark:bg-[#2d3354] dark:text-[#d5d8e0] dark:placeholder:text-[#7a7f9d] ${
-                      bodyError
-                        ? 'border-red-500 focus:border-red-500 dark:border-red-700'
-                        : 'border-woopi-ai-border dark:border-[#393e5c]'
-                    }`}
-                  />
-                  {bodyError && (
-                    <p className="text-xs text-red-600 dark:text-red-400 mt-2 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      {bodyError}
-                    </p>
-                  )}
-                </div>
+                  {/* Body Tab */}
+                  <TabsContent value="body" className="flex-1 flex flex-col mt-0 data-[state=inactive]:hidden">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h2 className="text-lg font-semibold text-woopi-ai-dark-gray">
+                          Request Body
+                        </h2>
+                        <p className="text-xs text-woopi-ai-gray mt-1">
+                          Supports {'{{'} variables {'}}'}
+                        </p>
+                      </div>
+                      {bodyError && (
+                        <Badge variant="destructive" className="flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          Invalid JSON
+                        </Badge>
+                      )}
+                    </div>
 
-                {/* Info about variables */}
-                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-700/50">
-                  <p className="text-xs text-blue-900 dark:text-blue-300">
-                    <strong>💡 Tip:</strong> Use variables like{' '}
-                    <code className="bg-blue-100 px-1 py-0.5 rounded dark:bg-blue-900/40 dark:text-blue-200">{'{{ocr}}'}</code>{' '}
-                    or{' '}
-                    <code className="bg-blue-100 px-1 py-0.5 rounded dark:bg-blue-900/40 dark:text-blue-200">{'{{prompt}}'}</code>{' '}
-                    that will be replaced at execution time.
-                  </p>
-                </div>
+                    <div className="flex-1 relative">
+                      <Textarea
+                        placeholder='{\n  "key": "{{variable}}"\n}'
+                        value={body}
+                        onChange={(e) => setBody(e.target.value)}
+                        className={`font-mono text-sm h-full min-h-[400px] resize-none dark:bg-[#2d3354] dark:text-[#d5d8e0] dark:placeholder:text-[#7a7f9d] ${
+                          bodyError
+                            ? 'border-red-500 focus:border-red-500 dark:border-red-700'
+                            : 'border-woopi-ai-border dark:border-[#393e5c]'
+                        }`}
+                      />
+                      {bodyError && (
+                        <p className="text-xs text-red-600 dark:text-red-400 mt-2 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {bodyError}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-700/50">
+                      <p className="text-xs text-blue-900 dark:text-blue-300">
+                        <strong>Dica:</strong> Use variáveis como{' '}
+                        <code className="bg-blue-100 px-1 py-0.5 rounded dark:bg-blue-900/40 dark:text-blue-200">{'{{ocr}}'}</code>{' '}
+                        ou{' '}
+                        <code className="bg-blue-100 px-1 py-0.5 rounded dark:bg-blue-900/40 dark:text-blue-200">{'{{prompt}}'}</code>{' '}
+                        que serão substituídas na execução.
+                      </p>
+                    </div>
+                  </TabsContent>
+
+                  {/* Test Tab */}
+                  <TabsContent value="test" className="flex-1 flex flex-col mt-0 overflow-y-auto data-[state=inactive]:hidden">
+                    {/* Variables Section */}
+                    <div className="mb-4">
+                      <h3 className="text-sm font-semibold text-woopi-ai-dark-gray mb-3 flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-woopi-ai-blue" />
+                        Variáveis Detectadas
+                      </h3>
+
+                      {detectedVariables.length === 0 ? (
+                        <div className="text-center py-6 text-sm text-woopi-ai-gray border border-dashed border-woopi-ai-border rounded-lg dark:border-[#393e5c]">
+                          Nenhuma variável <code className="text-xs bg-woopi-ai-light-gray px-1 py-0.5 rounded dark:bg-[#2d3354]">{'{{'} {'}}'}</code> detectada no template.
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {detectedVariables.map((varName) => (
+                            <div key={varName} className="flex items-center gap-2">
+                              <Label className="text-xs font-mono text-woopi-ai-gray whitespace-nowrap min-w-[100px] text-right">
+                                {`{{${varName}}}`}
+                              </Label>
+                              <Input
+                                placeholder={`Valor para ${varName}`}
+                                value={variableValues[varName] ?? ''}
+                                onChange={(e) => updateVariableValue(varName, e.target.value)}
+                                className="flex-1 text-sm border-woopi-ai-border dark:border-[#393e5c] dark:bg-[#2d3354] dark:text-[#d5d8e0] dark:placeholder:text-[#7a7f9d]"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Resolved URL Preview */}
+                    {endpointUrl.trim() && (
+                      <div className="mb-4 p-3 rounded-lg bg-woopi-ai-light-gray border border-woopi-ai-border dark:bg-[#2d3354] dark:border-[#393e5c]">
+                        <p className="text-xs text-woopi-ai-gray mb-1 font-medium">URL Resolvida</p>
+                        <p className="text-xs font-mono text-woopi-ai-dark-gray break-all leading-relaxed">
+                          <Badge variant="outline" className="mr-2 text-[10px] px-1.5 py-0 font-bold border-woopi-ai-border dark:border-[#393e5c]">
+                            {method}
+                          </Badge>
+                          {resolvedUrl}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Execute Button */}
+                    <Button
+                      onClick={handleTestAPI}
+                      disabled={isTesting || !endpointUrl.trim()}
+                      className="woopi-ai-button-primary w-full mb-4"
+                    >
+                      {isTesting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Simulando...
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-4 h-4 mr-2" />
+                          Simular Requisição
+                        </>
+                      )}
+                    </Button>
+
+                    {/* Response Area */}
+                    {testResponse && (
+                      <div className="flex-1 space-y-3">
+                        {/* Status Bar */}
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-woopi-ai-light-gray border border-woopi-ai-border dark:bg-[#2d3354] dark:border-[#393e5c]">
+                          <Badge className={`text-xs font-bold px-2 py-0.5 ${
+                            testResponse.status < 300
+                              ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-700/50'
+                              : testResponse.status < 400
+                              ? 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700/50'
+                              : 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700/50'
+                          }`}>
+                            {testResponse.status < 300 ? (
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                            ) : (
+                              <XCircle className="w-3 h-3 mr-1" />
+                            )}
+                            {testResponse.status} {testResponse.statusText}
+                          </Badge>
+                          <span className="text-xs text-woopi-ai-gray flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {testResponse.time}ms
+                          </span>
+                        </div>
+
+                        {/* Response Headers */}
+                        <details className="group">
+                          <summary className="text-xs font-medium text-woopi-ai-gray cursor-pointer hover:text-woopi-ai-dark-gray select-none">
+                            Response Headers ({Object.keys(testResponse.headers).length})
+                          </summary>
+                          <div className="mt-2 p-2 rounded bg-woopi-ai-light-gray border border-woopi-ai-border text-xs font-mono space-y-1 dark:bg-[#2d3354] dark:border-[#393e5c]">
+                            {Object.entries(testResponse.headers).map(([key, value]) => (
+                              <div key={key} className="flex gap-2">
+                                <span className="text-woopi-ai-blue font-medium">{key}:</span>
+                                <span className="text-woopi-ai-dark-gray break-all">{value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+
+                        {/* Response Body */}
+                        {testResponse.body ? (
+                          <div>
+                            <p className="text-xs font-medium text-woopi-ai-gray mb-2">Response Body</p>
+                            <pre className="p-3 rounded-lg bg-[#1e1e2e] text-[#cdd6f4] text-xs font-mono overflow-auto max-h-[300px] border border-[#313244] leading-relaxed">
+                              {testResponse.body}
+                            </pre>
+                          </div>
+                        ) : (
+                          <div className="text-center py-4 text-sm text-woopi-ai-gray">
+                            Sem body na resposta (204 No Content)
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Empty state when no test has been run */}
+                    {!testResponse && !isTesting && (
+                      <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
+                        <div className="w-12 h-12 rounded-full bg-woopi-ai-light-gray flex items-center justify-center mb-3 dark:bg-[#2d3354]">
+                          <Play className="w-5 h-5 text-woopi-ai-gray" />
+                        </div>
+                        <p className="text-sm text-woopi-ai-gray mb-1">Nenhum teste executado</p>
+                        <p className="text-xs text-woopi-ai-gray/70">
+                          Preencha as variáveis e clique em "Simular Requisição"
+                        </p>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </div>
