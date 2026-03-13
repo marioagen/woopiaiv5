@@ -16,7 +16,10 @@ import {
   ChevronUp,
   ChevronsUpDown,
   Workflow,
+  ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Filter
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
@@ -29,7 +32,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Checkbox } from './ui/checkbox';
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from './ui/pagination';
 import {
   Dialog,
   DialogContent,
@@ -61,7 +63,7 @@ type SortDirection = 'asc' | 'desc' | null;
 export function DocumentListTab() {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   // Checkbox selection states
   const [selectedDocuments, setSelectedDocuments] = useState<number[]>([]);
@@ -76,6 +78,23 @@ export function DocumentListTab() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [workflowsFilter, setWorkflowsFilter] = useState('all');
   const [documentTypeFilter, setDocumentTypeFilter] = useState('all');
+
+  const handleSearchChange = (value: string) => {
+    setDocumentSearch(value);
+    setCurrentPage(1);
+  };
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
+  const handleWorkflowsFilterChange = (value: string) => {
+    setWorkflowsFilter(value);
+    setCurrentPage(1);
+  };
+  const handleDocumentTypeFilterChange = (value: string) => {
+    setDocumentTypeFilter(value);
+    setCurrentPage(1);
+  };
 
   // Workflow selector dialog states
   const [workflowSelectorOpen, setWorkflowSelectorOpen] = useState(false);
@@ -167,6 +186,162 @@ export function DocumentListTab() {
       description: 'Relatório final de auditoria interna 2023',
       uploadedBy: 'Roberto Mendes',
       workflows: ['Compliance e Auditoria']
+    },
+    {
+      id: 8,
+      name: 'Ata_Reuniao_Diretoria.pdf',
+      type: 'PDF',
+      size: '1.2 MB',
+      uploadDate: '2024-01-08',
+      status: 'Analisado',
+      tags: ['Ata', 'Diretoria'],
+      description: 'Ata da reunião ordinária da diretoria executiva',
+      uploadedBy: 'Fernanda Alves',
+      workflows: ['Aprovação de Projetos']
+    },
+    {
+      id: 9,
+      name: 'Nota_Fiscal_Servicos_TI.pdf',
+      type: 'PDF',
+      size: '520 KB',
+      uploadDate: '2024-01-07',
+      status: 'Aguardando análise',
+      tags: ['Nota Fiscal', 'TI'],
+      description: 'Nota fiscal de serviços de infraestrutura de TI',
+      uploadedBy: 'Ricardo Torres',
+      workflows: ['Processamento de Pagamentos', 'Revisão Financeira']
+    },
+    {
+      id: 10,
+      name: 'Politica_Seguranca_2024.docx',
+      type: 'Word',
+      size: '2.1 MB',
+      uploadDate: '2024-01-06',
+      status: 'Analisado',
+      tags: ['Política', 'Segurança'],
+      description: 'Política de segurança da informação atualizada para 2024',
+      uploadedBy: 'Lucas Mendes',
+      workflows: ['Compliance e Auditoria', 'Validação RH']
+    },
+    {
+      id: 11,
+      name: 'Contrato_Aluguel_Sede.pdf',
+      type: 'PDF',
+      size: '3.8 MB',
+      uploadDate: '2024-01-05',
+      status: 'Finalizado',
+      tags: ['Contrato', 'Imobiliário'],
+      description: 'Contrato de aluguel da sede administrativa',
+      uploadedBy: 'Juliana Pereira',
+      workflows: ['Análise Jurídica']
+    },
+    {
+      id: 12,
+      name: 'Relatorio_Vendas_Q4.xlsx',
+      type: 'Excel',
+      size: '4.5 MB',
+      uploadDate: '2024-01-04',
+      status: 'Aguardando análise',
+      tags: ['Vendas', 'Relatório'],
+      description: 'Relatório consolidado de vendas do quarto trimestre',
+      uploadedBy: 'Marcos Rodrigues',
+      workflows: ['Aprovação Comercial', 'Revisão Financeira']
+    },
+    {
+      id: 13,
+      name: 'Certificado_ISO_9001.pdf',
+      type: 'PDF',
+      size: '980 KB',
+      uploadDate: '2024-01-03',
+      status: 'Finalizado',
+      tags: ['Certificação', 'Qualidade'],
+      description: 'Certificado de renovação da ISO 9001:2015',
+      uploadedBy: 'Eduardo Martins',
+      workflows: ['Controle de Qualidade']
+    },
+    {
+      id: 14,
+      name: 'Orcamento_Marketing_2024.xlsx',
+      type: 'Excel',
+      size: '1.6 MB',
+      uploadDate: '2024-01-02',
+      status: 'Analisado',
+      tags: ['Orçamento', 'Marketing'],
+      description: 'Orçamento anual do departamento de marketing',
+      uploadedBy: 'Beatriz Campos',
+      workflows: ['Aprovação Financeira', 'Review Marketing']
+    },
+    {
+      id: 15,
+      name: 'Laudo_Tecnico_Equipamentos.pdf',
+      type: 'PDF',
+      size: '2.7 MB',
+      uploadDate: '2024-01-01',
+      status: 'Aguardando análise',
+      tags: ['Laudo', 'Técnico'],
+      description: 'Laudo técnico de inspeção dos equipamentos industriais',
+      uploadedBy: 'Gabriel Nunes',
+      workflows: ['Controle de Qualidade']
+    },
+    {
+      id: 16,
+      name: 'Plano_Negocios_Expansao.pptx',
+      type: 'PowerPoint',
+      size: '8.3 MB',
+      uploadDate: '2023-12-28',
+      status: 'Analisado',
+      tags: ['Plano', 'Estratégia'],
+      description: 'Plano de negócios para expansão regional',
+      uploadedBy: 'Amanda Silva',
+      workflows: ['Aprovação de Projetos', 'Aprovação Financeira']
+    },
+    {
+      id: 17,
+      name: 'Termo_Confidencialidade.pdf',
+      type: 'PDF',
+      size: '450 KB',
+      uploadDate: '2023-12-27',
+      status: 'Finalizado',
+      tags: ['Termo', 'Jurídico'],
+      description: 'Termo de confidencialidade para parceiros comerciais',
+      uploadedBy: 'Carla Ribeiro',
+      workflows: ['Análise Jurídica']
+    },
+    {
+      id: 18,
+      name: 'Inventario_Ativos_2023.xlsx',
+      type: 'Excel',
+      size: '5.9 MB',
+      uploadDate: '2023-12-26',
+      status: 'Aguardando análise',
+      tags: ['Inventário', 'Patrimônio'],
+      description: 'Inventário completo de ativos fixos da empresa',
+      uploadedBy: 'Thiago Martins',
+      workflows: ['Compliance e Auditoria', 'Revisão Financeira']
+    },
+    {
+      id: 19,
+      name: 'Folha_Pagamento_Dezembro.pdf',
+      type: 'PDF',
+      size: '1.1 MB',
+      uploadDate: '2023-12-25',
+      status: 'Finalizado',
+      tags: ['Folha', 'RH'],
+      description: 'Folha de pagamento do mês de dezembro 2023',
+      uploadedBy: 'Ana Maria',
+      workflows: ['Validação RH', 'Processamento de Pagamentos']
+    },
+    {
+      id: 20,
+      name: 'Minuta_Contrato_Parceria.docx',
+      type: 'Word',
+      size: '1.4 MB',
+      uploadDate: '2023-12-24',
+      status: 'Aguardando análise',
+      tags: ['Minuta', 'Parceria'],
+      description: 'Minuta de contrato de parceria estratégica com fornecedor',
+      uploadedBy: 'Pedro Costa',
+      workflows: ['Análise Jurídica', 'Aprovação Comercial']
     },
   ]);
 
@@ -283,10 +458,36 @@ export function DocumentListTab() {
   const filteredAndSortedDocuments = sortDocuments(filterDocuments(documents));
   
   // Pagination
-  const totalPages = Math.ceil(filteredAndSortedDocuments.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const totalItems = filteredAndSortedDocuments.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (safeCurrentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
   const paginatedDocuments = filteredAndSortedDocuments.slice(startIndex, endIndex);
+
+  const getVisiblePages = (): (number | 'ellipsis')[] => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages: (number | 'ellipsis')[] = [];
+    if (safeCurrentPage <= 3) {
+      pages.push(1, 2, 3, 4, 'ellipsis', totalPages);
+    } else if (safeCurrentPage >= totalPages - 2) {
+      pages.push(1, 'ellipsis', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+    } else {
+      pages.push(1, 'ellipsis', safeCurrentPage - 1, safeCurrentPage, safeCurrentPage + 1, 'ellipsis', totalPages);
+    }
+    return pages;
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1);
+  };
 
   const handleDelete = (id: number) => {
     setDocuments(documents.filter(doc => doc.id !== id));
@@ -416,13 +617,13 @@ export function DocumentListTab() {
                   <Input
                     placeholder="Buscar por nome do documento, descrição ou workflows..."
                     value={documentSearch}
-                    onChange={(e) => setDocumentSearch(e.target.value)}
+                    onChange={(e) => handleSearchChange(e.target.value)}
                     className="pl-10 pr-10 border border-woopi-ai-border"
                   />
                   {documentSearch && (
                     <button
                       type="button"
-                      onClick={() => setDocumentSearch('')}
+                      onClick={() => handleSearchChange('')}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-woopi-ai-gray hover:text-woopi-ai-dark-gray transition-colors"
                       title="Limpar busca"
                     >
@@ -433,7 +634,7 @@ export function DocumentListTab() {
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
                   <SelectTrigger className="w-full sm:w-48 border border-woopi-ai-border">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
@@ -445,7 +646,7 @@ export function DocumentListTab() {
                   </SelectContent>
                 </Select>
                 
-                <Select value={workflowsFilter} onValueChange={setWorkflowsFilter}>
+                <Select value={workflowsFilter} onValueChange={handleWorkflowsFilterChange}>
                   <SelectTrigger className="w-full sm:w-48 border border-woopi-ai-border">
                     <SelectValue placeholder="Workflows" />
                   </SelectTrigger>
@@ -457,7 +658,7 @@ export function DocumentListTab() {
                   </SelectContent>
                 </Select>
 
-                <Select value={documentTypeFilter} onValueChange={setDocumentTypeFilter}>
+                <Select value={documentTypeFilter} onValueChange={handleDocumentTypeFilterChange}>
                   <SelectTrigger className="w-full sm:w-48 border border-woopi-ai-border">
                     <SelectValue placeholder="Tipo de Documento" />
                   </SelectTrigger>
@@ -645,50 +846,123 @@ export function DocumentListTab() {
             </Table>
           </div>
 
-          {/* Footer with pagination info and pagination */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between px-0 py-4 border-t border-woopi-ai-border gap-4 mt-4">
-            <div className="text-sm woopi-ai-text-secondary">
-              Linhas por página: 
-              <select className="ml-2 border border-woopi-ai-border rounded px-2 py-1">
-                <option value={10}>10</option>
-              </select>
-              <span className="ml-4">
-                {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredAndSortedDocuments.length)} de {filteredAndSortedDocuments.length}
-              </span>
-            </div>
-            
-            {totalPages > 1 && (
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                    />
-                  </PaginationItem>
-                  
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <PaginationItem key={page}>
-                      <PaginationLink
-                        onClick={() => setCurrentPage(page)}
-                        isActive={currentPage === page}
-                        className="cursor-pointer"
+          {/* Pagination */}
+          {totalItems > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-3 pt-3 border-t border-woopi-ai-border">
+              {/* Left: Info text + items per page selector */}
+              <div className="flex items-center gap-4 order-1">
+                <p className="text-sm woopi-ai-text-secondary whitespace-nowrap">
+                  Mostrando <span className="font-medium woopi-ai-text-primary">{startIndex + 1}</span>–<span className="font-medium woopi-ai-text-primary">{endIndex}</span> de{' '}
+                  <span className="font-medium woopi-ai-text-primary">{totalItems}</span>
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm woopi-ai-text-secondary whitespace-nowrap">por página:</span>
+                  <Select value={String(itemsPerPage)} onValueChange={handleItemsPerPageChange}>
+                    <SelectTrigger className="w-[72px] h-8 border-woopi-ai-border text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Right: Page navigation */}
+              {totalPages > 1 ? (
+                <TooltipProvider>
+                <div className="flex items-center gap-1 order-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(1)}
+                        disabled={safeCurrentPage === 1}
+                        className="h-8 w-8 p-0 border-woopi-ai-border disabled:opacity-40"
+                      >
+                        <ChevronsLeft className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Primeira página</p></TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(safeCurrentPage - 1)}
+                        disabled={safeCurrentPage === 1}
+                        className="h-8 w-8 p-0 border-woopi-ai-border disabled:opacity-40"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Página anterior</p></TooltipContent>
+                  </Tooltip>
+
+                  {getVisiblePages().map((page, idx) =>
+                    page === 'ellipsis' ? (
+                      <span key={`ellipsis-${idx}`} className="flex items-center justify-center w-8 h-8 text-sm woopi-ai-text-secondary select-none">
+                        ...
+                      </span>
+                    ) : (
+                      <Button
+                        key={page}
+                        variant={page === safeCurrentPage ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => handlePageChange(page)}
+                        className={
+                          page === safeCurrentPage
+                            ? 'h-8 w-8 p-0 woopi-ai-button-primary text-sm font-medium'
+                            : 'h-8 w-8 p-0 border-woopi-ai-border text-sm font-medium hover:bg-woopi-ai-light-gray'
+                        }
                       >
                         {page}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            )}
-          </div>
+                      </Button>
+                    )
+                  )}
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(safeCurrentPage + 1)}
+                        disabled={safeCurrentPage === totalPages}
+                        className="h-8 w-8 p-0 border-woopi-ai-border disabled:opacity-40"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Próxima página</p></TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(totalPages)}
+                        disabled={safeCurrentPage === totalPages}
+                        className="h-8 w-8 p-0 border-woopi-ai-border disabled:opacity-40"
+                      >
+                        <ChevronsRight className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Última página</p></TooltipContent>
+                  </Tooltip>
+                </div>
+                </TooltipProvider>
+              ) : (
+                <div className="order-2" />
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
