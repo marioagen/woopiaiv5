@@ -19,7 +19,8 @@ import {
   ExternalLink,
   Copy,
   AlertTriangle,
-  UserCheck
+  UserCheck,
+  Eye
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -45,6 +46,7 @@ interface WorkflowStep {
 interface WorkflowGestao {
   id: number;
   nomeWorkflow: string;
+  descricao?: string;
   timesAssociados: string[];
   usuarios: string[];
   etapas: WorkflowStep[];
@@ -69,6 +71,9 @@ export function WorkflowGestaoPage() {
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   
+  // Description modal state
+  const [descricaoModal, setDescricaoModal] = useState<{ open: boolean; workflow: WorkflowGestao | null }>({ open: false, workflow: null });
+
   // Modal states
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [workflowToDelete, setWorkflowToDelete] = useState<WorkflowGestao | null>(null);
@@ -91,11 +96,6 @@ export function WorkflowGestaoPage() {
     10: { 1: 9 },
     11: { 1: 1, 2: 3 },
     12: { 1: 7, 2: 4 },
-    13: { 1: 12, 2: 3 },
-    14: {},
-    15: { 1: 2, 2: 1 },
-    16: { 1: 15, 2: 8 },
-    17: { 1: 5 },
   };
 
   const getDocsForWorkflow = (workflowId: number) => {
@@ -223,6 +223,7 @@ export function WorkflowGestaoPage() {
     {
       id: 10,
       nomeWorkflow: 'Análise de Crédito',
+      descricao: 'Fluxo automatizado de avaliação de crédito para clientes pessoa física e jurídica, incluindo análise de score, histórico de pagamentos e capacidade financeira para aprovação de limites.',
       timesAssociados: ['Financeiro', 'Risco'],
       usuarios: ['Carlos Oliveira', 'Juliana Ferreira'],
       etapas: [
@@ -235,6 +236,7 @@ export function WorkflowGestaoPage() {
     {
       id: 11,
       nomeWorkflow: 'Controle de Qualidade',
+      descricao: 'Esteira de inspeção e certificação de qualidade dos produtos, contemplando inspeção visual, testes funcionais e emissão de laudo técnico antes da liberação para o mercado.',
       timesAssociados: ['Qualidade', 'Produção'],
       usuarios: ['Luciana Oliveira', 'Roberto Mendes'],
       etapas: [
@@ -248,6 +250,7 @@ export function WorkflowGestaoPage() {
     {
       id: 12,
       nomeWorkflow: 'Gestão de Incidentes',
+      descricao: 'Processo de triagem, classificação e resolução de incidentes de TI, com escalonamento automático por criticidade e SLA definido por nível de impacto no ambiente produtivo.',
       timesAssociados: ['TI', 'Suporte'],
       usuarios: ['Eduardo Santos', 'Marina Costa'],
       etapas: [
@@ -257,68 +260,6 @@ export function WorkflowGestaoPage() {
       criadoEm: '2024-02-22',
       status: 'Ativo',
       ultimaExecucao: '2024-02-25'
-    },
-    {
-      id: 13,
-      nomeWorkflow: 'Processo Seletivo',
-      timesAssociados: ['RH'],
-      usuarios: ['Fernanda Lima', 'João Silva'],
-      etapas: [
-        { id: 1, nomeEtapa: 'Triagem de CVs', perfilResponsavel: 'Recrutador', slaHoras: 48 },
-        { id: 2, nomeEtapa: 'Entrevista Técnica', perfilResponsavel: 'Gestor de Área', slaHoras: 72 }
-      ],
-      criadoEm: '2024-03-01',
-      status: 'Ativo',
-      ultimaExecucao: '2024-03-05'
-    },
-    {
-      id: 14,
-      nomeWorkflow: 'Revisão de Contratos de Locação',
-      timesAssociados: ['Jurídico', 'Administrativo'],
-      usuarios: ['Roberto Mendes', 'Ana Maria'],
-      etapas: [
-        { id: 1, nomeEtapa: 'Análise de Cláusulas', perfilResponsavel: 'Advogado', slaHoras: 36 }
-      ],
-      criadoEm: '2024-03-05',
-      status: 'Inativo'
-    },
-    {
-      id: 15,
-      nomeWorkflow: 'Emissão de Notas Fiscais',
-      timesAssociados: ['Financeiro', 'Contabilidade'],
-      usuarios: ['Carlos Oliveira', 'Juliana Ferreira'],
-      etapas: [
-        { id: 1, nomeEtapa: 'Conferência de Dados', perfilResponsavel: 'Assistente Fiscal', slaHoras: 4 },
-        { id: 2, nomeEtapa: 'Validação Contábil', perfilResponsavel: 'Contador', slaHoras: 8 }
-      ],
-      criadoEm: '2024-03-08',
-      status: 'Ativo',
-      ultimaExecucao: '2024-03-10'
-    },
-    {
-      id: 16,
-      nomeWorkflow: 'Avaliação de Desempenho',
-      timesAssociados: ['RH', 'Diretoria'],
-      usuarios: ['Fernanda Lima', 'Pedro Costa'],
-      etapas: [
-        { id: 1, nomeEtapa: 'Autoavaliação', perfilResponsavel: 'Colaborador', slaHoras: 72 },
-        { id: 2, nomeEtapa: 'Avaliação do Gestor', perfilResponsavel: 'Gestor', slaHoras: 48 }
-      ],
-      criadoEm: '2024-03-10',
-      status: 'Ativo',
-      ultimaExecucao: '2024-03-15'
-    },
-    {
-      id: 17,
-      nomeWorkflow: 'Gestão de Ativos',
-      timesAssociados: ['TI', 'Administrativo'],
-      usuarios: ['Eduardo Santos', 'Luciana Oliveira'],
-      etapas: [
-        { id: 1, nomeEtapa: 'Inventário', perfilResponsavel: 'Analista de TI', slaHoras: 24 }
-      ],
-      criadoEm: '2024-03-12',
-      status: 'Ativo',
-      ultimaExecucao: '2024-03-14'
     }
   ]);
 
@@ -728,6 +669,7 @@ export function WorkflowGestaoPage() {
                       {getSortIcon('nomeWorkflow')}
                     </div>
                   </TableHead>
+                  <TableHead className="max-w-[220px]">Descrição</TableHead>
                   <TableHead 
                     className="cursor-pointer select-none hover:bg-woopi-ai-light-gray transition-colors"
                     onClick={() => handleSort('timesAssociados')}
@@ -751,6 +693,32 @@ export function WorkflowGestaoPage() {
                         <div className="flex items-center gap-2">
                           <div className="font-medium woopi-ai-text-primary">{workflow.nomeWorkflow}</div>
                         </div>
+                      </TableCell>
+                      <TableCell className="max-w-[220px]">
+                        {workflow.descricao ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm woopi-ai-text-secondary truncate max-w-[170px]" title={workflow.descricao}>
+                              {workflow.descricao.length > 60
+                                ? workflow.descricao.slice(0, 60) + '…'
+                                : workflow.descricao}
+                            </span>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => setDescricaoModal({ open: true, workflow })}
+                                  className="flex-shrink-0 p-1 rounded hover:bg-woopi-ai-light-blue text-woopi-ai-gray hover:text-woopi-ai-blue transition-colors"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Ver descrição completa</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-woopi-ai-gray italic">—</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
@@ -837,7 +805,7 @@ export function WorkflowGestaoPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8">
+                    <TableCell colSpan={5} className="text-center py-8">
                       <div className="flex flex-col items-center gap-2">
                         <Workflow className="w-8 h-8 text-woopi-ai-gray opacity-50" />
                         <span className="text-woopi-ai-gray">
@@ -864,6 +832,22 @@ export function WorkflowGestaoPage() {
                         <p className="font-medium woopi-ai-text-primary">{workflow.nomeWorkflow}</p>
                       </div>
                       <p className="text-xs woopi-ai-text-secondary mb-2">ID: {workflow.id}</p>
+                      {workflow.descricao && (
+                        <div className="flex items-start gap-1.5 mt-1 mb-2">
+                          <p className="text-xs woopi-ai-text-secondary line-clamp-2 flex-1">
+                            {workflow.descricao.length > 80
+                              ? workflow.descricao.slice(0, 80) + '…'
+                              : workflow.descricao}
+                          </p>
+                          <button
+                            onClick={() => setDescricaoModal({ open: true, workflow })}
+                            className="flex-shrink-0 p-0.5 rounded hover:bg-woopi-ai-light-blue text-woopi-ai-gray hover:text-woopi-ai-blue transition-colors mt-0.5"
+                            title="Ver descrição completa"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -1157,6 +1141,39 @@ export function WorkflowGestaoPage() {
           </Dialog>
         </div>
       )}
+
+      {/* Modal de Descrição Completa */}
+      <Dialog open={descricaoModal.open} onOpenChange={(open) => setDescricaoModal(prev => ({ ...prev, open }))}>
+        <DialogContent className="max-w-lg mx-4">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="woopi-ai-text-primary flex items-center gap-2">
+              <Eye className="w-4 h-4 text-woopi-ai-blue flex-shrink-0" />
+              {descricaoModal.workflow?.nomeWorkflow}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Descrição completa da esteira
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            {descricaoModal.workflow?.descricao ? (
+              <p className="text-sm woopi-ai-text-secondary leading-relaxed whitespace-pre-wrap">
+                {descricaoModal.workflow.descricao}
+              </p>
+            ) : (
+              <p className="text-sm text-woopi-ai-gray italic">Nenhuma descrição cadastrada.</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDescricaoModal({ open: false, workflow: null })}
+              className="border-woopi-ai-border"
+            >
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

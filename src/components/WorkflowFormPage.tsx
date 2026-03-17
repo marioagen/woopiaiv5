@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -341,6 +342,7 @@ export function WorkflowFormPage() {
   // Form data
   const [formData, setFormData] = useState({
     nomeWorkflow: '',
+    descricao: '',
     timesAssociados: [] as string[],
     etapas: [] as WorkflowStep[]
   });
@@ -372,6 +374,7 @@ export function WorkflowFormPage() {
       if (workflow) {
         setFormData({
           nomeWorkflow: workflow.nomeWorkflow,
+          descricao: (workflow as any).descricao || '',
           timesAssociados: workflow.timesAssociados,
           etapas: workflow.etapas || []
         });
@@ -605,6 +608,32 @@ export function WorkflowFormPage() {
                       onChange={(e) => setFormData(prev => ({ ...prev, nomeWorkflow: e.target.value }))}
                       className="border border-woopi-ai-border w-full"
                     />
+                  </div>
+
+                  {/* Descrição */}
+                  <div className="space-y-2 lg:col-span-2">
+                    <Label htmlFor="descricao">
+                      Descrição
+                      <span className="text-woopi-ai-gray font-normal ml-1">(opcional)</span>
+                    </Label>
+                    <Textarea
+                      id="descricao"
+                      placeholder="Descreva o objetivo e o contexto desta esteira de processamento..."
+                      value={formData.descricao}
+                      onChange={(e) => {
+                        if (e.target.value.length <= 500) {
+                          setFormData(prev => ({ ...prev, descricao: e.target.value }));
+                        }
+                      }}
+                      maxLength={500}
+                      rows={3}
+                      className="border border-woopi-ai-border w-full resize-none"
+                    />
+                    <div className="flex justify-end">
+                      <span className={`text-xs ${formData.descricao.length >= 480 ? 'text-amber-500' : formData.descricao.length >= 500 ? 'text-red-500' : 'text-woopi-ai-gray'}`}>
+                        {formData.descricao.length}/500
+                      </span>
+                    </div>
                   </div>
 
                   {/* Times Associados */}
