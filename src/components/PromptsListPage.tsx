@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Plus, Search, MoreHorizontal, Edit, Trash2, CloudDownload, Globe, Copy, Eye, Bot } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Edit, Trash2, CloudDownload, Globe, Copy, Eye } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent } from './ui/card';
@@ -9,7 +9,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { toast } from 'sonner@2.0.3';
-import { mockAgents, generateOutputKey } from '../data/mockAgents';
 
 interface Prompt {
   id: string;
@@ -306,32 +305,6 @@ export function PromptsListPage() {
                 </div>
               </div>
               
-              {(() => {
-                const agent = mockAgents.find(a => a.id === prompt.id);
-                const outputKey = agent?.outputKey ?? generateOutputKey(prompt.name);
-                const variable = `{{${outputKey}}}`;
-                return (
-                  <div className="flex items-center gap-1.5 mb-3 px-2 py-1.5 rounded-md bg-blue-50 dark:bg-blue-900/15 border border-blue-100 dark:border-blue-800/40">
-                    <Bot className="w-3 h-3 text-woopi-ai-blue flex-shrink-0" />
-                    <code className="text-[10px] font-mono text-woopi-ai-blue truncate flex-1 leading-none">
-                      {variable}
-                    </code>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigator.clipboard.writeText(variable);
-                        toast.success('Variável copiada!');
-                      }}
-                      className="flex-shrink-0 text-woopi-ai-gray hover:text-woopi-ai-blue transition-colors"
-                      title="Copiar variável de output"
-                    >
-                      <Copy className="w-3 h-3" />
-                    </button>
-                  </div>
-                );
-              })()}
-
               <div className="flex items-center justify-between text-xs">
                 <span className="text-blue-600">criação - {prompt.createdAt}</span>
                 <TooltipProvider delayDuration={200}>
