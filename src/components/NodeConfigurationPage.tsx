@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router';
 import { 
   ArrowLeft, 
@@ -22,7 +22,8 @@ import {
   Info,
   Lightbulb,
   PlugZap,
-  Search
+  Search,
+  Bot,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -32,6 +33,25 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSepa
 import { Textarea } from './ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { toast } from 'sonner@2.0.3';
+import { mockAgents } from '../data/mockAgents';
+
+// Returns true if there's an unclosed {{ before cursor position
+function hasOpenBrace(value: string, cursorPos?: number): boolean {
+  const text = cursorPos !== undefined ? value.slice(0, cursorPos) : value;
+  const lastOpen = text.lastIndexOf('{{');
+  if (lastOpen === -1) return false;
+  return !text.slice(lastOpen + 2).includes('}}');
+}
+
+// Replaces the trailing {{ (before cursor) with {{outputKey}}
+function insertAgentVar(value: string, outputKey: string, cursorPos?: number): string {
+  const boundary = cursorPos !== undefined ? cursorPos : value.length;
+  const before = value.slice(0, boundary);
+  const after = cursorPos !== undefined ? value.slice(cursorPos) : '';
+  const lastOpen = before.lastIndexOf('{{');
+  if (lastOpen === -1) return value + `{{${outputKey}}}`;
+  return before.slice(0, lastOpen) + `{{${outputKey}}}` + after;
+}
 
 // Interface para endpoints de API externa
 interface ApiEndpoint {
@@ -398,6 +418,42 @@ export function NodeConfigurationPage() {
   const [selectedApiTemplate, setSelectedApiTemplate] = useState<string>(initialConfig?.selectedApiTemplate || '');
   const [apiDependency, setApiDependency] = useState<string>(initialConfig?.apiDependency || '');
 
+  // Autocomplete {{ dropdown state
+  const [acDropdown, setAcDropdown] = useState<{
+    open: boolean;
+    top: number;
+    left: number;
+    width: number;
+    onSelect: (key: string) => void;
+  }>({ open: false, top: 0, left: 0, width: 0, onSelect: () => {} });
+
+  const openAcDropdown = useCallback(
+    (
+      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+      currentValue: string,
+      onSelect: (key: string) => void
+    ) => {
+      const cursorPos = e.target.selectionStart ?? currentValue.length;
+      if (hasOpenBrace(currentValue, cursorPos)) {
+        const rect = e.target.getBoundingClientRect();
+        setAcDropdown({
+          open: true,
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: Math.max(rect.width, 260),
+          onSelect,
+        });
+      } else {
+        setAcDropdown(prev => ({ ...prev, open: false }));
+      }
+    },
+    []
+  );
+
+  const closeAcDropdown = useCallback(() => {
+    setAcDropdown(prev => ({ ...prev, open: false }));
+  }, []);
+
   // Estados para criação inline de prompt
   const [showPromptForm, setShowPromptForm] = useState(false);
   const [newPromptData, setNewPromptData] = useState({
@@ -686,10 +742,25 @@ export function NodeConfigurationPage() {
                       </Select>
                     </div>
                     <div className="flex-1 min-w-0 space-y-1">
-                      <Label className="text-xs text-gray-500 dark:text-gray-400">URL do Endpoint</Label>
+                      <div className="flex items-center gap-1">
+                        <Label className="text-xs text-gray-500 dark:text-gray-400">URL do Endpoint</Label>
+                        <span
+                          title="Digite {{ para inserir o output de um agente"
+                          className="text-gray-400 hover:text-woopi-ai-blue transition-colors cursor-help"
+                        >
+                          <Info className="w-3 h-3" />
+                        </span>
+                      </div>
                       <Input
                         value={apiUrl}
-                        onChange={(e) => setApiUrl(e.target.value)}
+                        onChange={(e) => {
+                          setApiUrl(e.target.value);
+                          openAcDropdown(e, e.target.value, (key) => {
+                            setApiUrl(prev => insertAgentVar(prev, key));
+                            closeAcDropdown();
+                          });
+                        }}
+                        onBlur={() => setTimeout(closeAcDropdown, 150)}
                         placeholder="http://localhost:5000/dados"
                         className="h-9 text-sm"
                       />
@@ -732,12 +803,20 @@ export function NodeConfigurationPage() {
                               <Input
                                 value={param.key}
                                 onChange={(e) => updateParam(index, 'key', e.target.value)}
+                                onBlur={() => setTimeout(closeAcDropdown, 150)}
                                 placeholder="param_name"
                                 className="h-8 text-xs"
                               />
                               <Input
                                 value={param.value}
-                                onChange={(e) => updateParam(index, 'value', e.target.value)}
+                                onChange={(e) => {
+                                  updateParam(index, 'value', e.target.value);
+                                  openAcDropdown(e, e.target.value, (key) => {
+                                    updateParam(index, 'value', insertAgentVar(param.value, key));
+                                    closeAcDropdown();
+                                  });
+                                }}
+                                onBlur={() => setTimeout(closeAcDropdown, 150)}
                                 placeholder="param_value"
                                 className="h-8 text-xs"
                               />
@@ -769,12 +848,20 @@ export function NodeConfigurationPage() {
                               <Input
                                 value={header.key}
                                 onChange={(e) => updateHeader(index, 'key', e.target.value)}
+                                onBlur={() => setTimeout(closeAcDropdown, 150)}
                                 placeholder="Content-Type"
                                 className="h-8 text-xs"
                               />
                               <Input
                                 value={header.value}
-                                onChange={(e) => updateHeader(index, 'value', e.target.value)}
+                                onChange={(e) => {
+                                  updateHeader(index, 'value', e.target.value);
+                                  openAcDropdown(e, e.target.value, (key) => {
+                                    updateHeader(index, 'value', insertAgentVar(header.value, key));
+                                    closeAcDropdown();
+                                  });
+                                }}
+                                onBlur={() => setTimeout(closeAcDropdown, 150)}
                                 placeholder="application/json"
                                 className="h-8 text-xs"
                               />
@@ -802,18 +889,33 @@ export function NodeConfigurationPage() {
             {/* ── Right column ── */}
             <div className="flex-1 p-4 md:p-6 flex flex-col gap-4">
               <div className="space-y-1">
-                <Label className="text-base font-medium text-gray-800 dark:text-[#d5d8e0]">
-                  Corpo da Requisição
-                </Label>
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-base font-medium text-gray-800 dark:text-[#d5d8e0]">
+                    Corpo da Requisição
+                  </Label>
+                  <span
+                    title="Digite {{ para inserir o output de um agente como variável"
+                    className="text-gray-400 hover:text-woopi-ai-blue transition-colors cursor-help"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Digite '|' para ver as variáveis disponíveis.
+                  Digite <code className="bg-gray-100 dark:bg-[#1f2132] px-1 py-0.5 rounded text-[11px] font-mono">{'{{' }</code> para inserir outputs de agentes ou use variáveis de nós anteriores.
                 </p>
               </div>
 
               <Textarea
                 value={requestBody}
-                onChange={(e) => setRequestBody(e.target.value)}
-                placeholder={'{\n  "prompt": "{{prompt}}"\n}'}
+                onChange={(e) => {
+                  setRequestBody(e.target.value);
+                  openAcDropdown(e, e.target.value, (key) => {
+                    setRequestBody(prev => insertAgentVar(prev, key));
+                    closeAcDropdown();
+                  });
+                }}
+                onBlur={() => setTimeout(closeAcDropdown, 150)}
+                placeholder={'{\n  "prompt": "{{analise_juridica_out}}"\n}'}
                 className="font-mono text-sm resize-none flex-1 min-h-[420px] leading-relaxed"
               />
 
@@ -821,7 +923,7 @@ export function NodeConfigurationPage() {
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30 rounded-lg p-3 flex items-center gap-2 flex-shrink-0">
                 <Lightbulb className="w-4 h-4 text-blue-500 dark:text-blue-400 flex-shrink-0" />
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  Dica: Use variáveis como [ocr] ou [prompt] que serão substituídas no momento da execução.
+                  Dica: Digite <code className="bg-blue-100 dark:bg-blue-800/40 px-1 rounded font-mono text-xs">{'{{' }</code> em qualquer campo para selecionar o output de um agente como variável dinâmica.
                 </p>
               </div>
             </div>
@@ -1521,7 +1623,7 @@ export function NodeConfigurationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#1f2132]">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#1f2132]" onClick={() => closeAcDropdown()}>
       {/* Header com Breadcrumb */}
       <div className="bg-white dark:bg-[#1a1b2e] border-b border-gray-200 dark:border-[#393e5c] sticky top-0 z-10">
         <div className="p-4 md:p-6">
@@ -1581,6 +1683,40 @@ export function NodeConfigurationPage() {
           </div>
         </div>
       </div>
+
+      {/* Agent output autocomplete dropdown */}
+      {acDropdown.open && (
+        <div
+          className="fixed z-50 bg-white dark:bg-[#292f4c] border border-gray-200 dark:border-[#393e5c] rounded-lg shadow-xl overflow-hidden"
+          style={{ top: acDropdown.top, left: acDropdown.left, minWidth: acDropdown.width, maxWidth: 340 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 dark:border-[#393e5c] bg-gray-50 dark:bg-[#1f2132]">
+            <Bot className="w-3.5 h-3.5 text-woopi-ai-blue flex-shrink-0" />
+            <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">
+              Outputs de Agentes
+            </span>
+          </div>
+          <div className="max-h-56 overflow-y-auto">
+            {mockAgents.map((agent) => (
+              <button
+                key={agent.id}
+                type="button"
+                className="w-full text-left px-3 py-2.5 hover:bg-blue-50 dark:hover:bg-[#0073ea]/10 transition-colors border-b border-gray-50 dark:border-[#393e5c]/50 last:border-b-0"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  acDropdown.onSelect(agent.outputKey);
+                }}
+              >
+                <div className="font-medium text-xs text-gray-800 dark:text-[#d5d8e0]">{agent.name}</div>
+                <div className="font-mono text-[11px] text-woopi-ai-blue dark:text-[#4a9ff5] mt-0.5">
+                  {`{{${agent.outputKey}}}`}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Conteúdo Principal */}
       <div className="p-4 md:p-6 space-y-6">
