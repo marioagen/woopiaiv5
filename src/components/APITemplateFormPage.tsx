@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
@@ -26,9 +26,12 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  Globe
+  Globe,
+  Bot,
+  Info,
 } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
+import { mockAgents } from '../data/mockAgents';
 import {
   Dialog,
   DialogContent,
@@ -162,6 +165,28 @@ function generateMockResponse(method: HTTPMethod, resolvedUrl: string, resolvedB
   }
 }
 
+// Returns true if there's an unclosed {{ before the cursor
+function hasOpenBrace(value: string, cursorPos?: number): boolean {
+  const text = cursorPos !== undefined ? value.slice(0, cursorPos) : value;
+  const lastOpen = text.lastIndexOf('{{');
+  if (lastOpen === -1) return false;
+  return !text.slice(lastOpen + 2).includes('}}');
+}
+
+// Replaces the trailing {{ (before cursor) with {{outputKey}}
+function insertAgentVariable(
+  value: string,
+  outputKey: string,
+  cursorPos?: number
+): string {
+  const boundary = cursorPos !== undefined ? cursorPos : value.length;
+  const before = value.slice(0, boundary);
+  const after = cursorPos !== undefined ? value.slice(cursorPos) : '';
+  const lastOpen = before.lastIndexOf('{{');
+  if (lastOpen === -1) return value + `{{${outputKey}}}`;
+  return before.slice(0, lastOpen) + `{{${outputKey}}}` + after;
+}
+
 export function APITemplateFormPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -191,6 +216,16 @@ export function APITemplateFormPage() {
   const [testResponse, setTestResponse] = useState<TestResponse | null>(null);
   const [isTesting, setIsTesting] = useState(false);
 
+  // Autocomplete dropdown state
+  const [acDropdown, setAcDropdown] = useState<{
+    open: boolean;
+    top: number;
+    left: number;
+    width: number;
+    onSelect: (outputKey: string) => void;
+  }>({ open: false, top: 0, left: 0, width: 0, onSelect: () => {} });
+  const acDropdownRef = useRef<HTMLDivElement>(null);
+
   const detectedVariables = useMemo(
     () => extractVariables(endpointUrl, queryParams, headers, body),
     [endpointUrl, queryParams, headers, body]
@@ -208,6 +243,48 @@ export function APITemplateFormPage() {
 
   const updateVariableValue = useCallback((varName: string, value: string) => {
     setVariableValues(prev => ({ ...prev, [varName]: value }));
+  }, []);
+
+  // Auto-populate agent output variables with mock values when detected
+  useEffect(() => {
+    setVariableValues(prev => {
+      const updated = { ...prev };
+      detectedVariables.forEach(varName => {
+        const agent = mockAgents.find(a => a.outputKey === varName);
+        if (agent && !(varName in prev)) {
+          updated[varName] = agent.mockOutput;
+        }
+      });
+      return updated;
+    });
+  }, [detectedVariables]);
+
+  // Helper to open the autocomplete dropdown for any input/textarea
+  const openAcDropdown = useCallback(
+    (
+      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+      currentValue: string,
+      onSelect: (outputKey: string) => void
+    ) => {
+      const cursorPos = e.target.selectionStart ?? currentValue.length;
+      if (hasOpenBrace(currentValue, cursorPos)) {
+        const rect = e.target.getBoundingClientRect();
+        setAcDropdown({
+          open: true,
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: Math.max(rect.width, 280),
+          onSelect,
+        });
+      } else {
+        setAcDropdown(prev => ({ ...prev, open: false }));
+      }
+    },
+    []
+  );
+
+  const closeAcDropdown = useCallback(() => {
+    setAcDropdown(prev => ({ ...prev, open: false }));
   }, []);
 
   const handleTestAPI = useCallback(async () => {
@@ -528,12 +605,29 @@ export function APITemplateFormPage() {
                     </Select>
                   </div>
                   <div className="col-span-3 space-y-2">
-                    <Label htmlFor="endpoint-url" className="text-woopi-ai-dark-gray">Endpoint URL</Label>
+                    <div className="flex items-center gap-1.5">
+                      <Label htmlFor="endpoint-url" className="text-woopi-ai-dark-gray">Endpoint URL</Label>
+                      <span
+                        title='Digite {{ para inserir o output de um agente'
+                        className="text-woopi-ai-gray hover:text-woopi-ai-blue transition-colors cursor-help"
+                      >
+                        <Info className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
                     <Input
                       id="endpoint-url"
                       placeholder="https://api.example.com/v1/resource"
                       value={endpointUrl}
-                      onChange={(e) => setEndpointUrl(e.target.value)}
+                      onChange={(e) => {
+                        setEndpointUrl(e.target.value);
+                        openAcDropdown(e, e.target.value, (outputKey) => {
+                          setEndpointUrl(prev =>
+                            insertAgentVariable(prev, outputKey)
+                          );
+                          closeAcDropdown();
+                        });
+                      }}
+                      onBlur={() => setTimeout(closeAcDropdown, 150)}
                       className="border-woopi-ai-border font-mono text-sm dark:border-[#393e5c] dark:bg-[#2d3354] dark:text-[#d5d8e0] dark:placeholder:text-[#7a7f9d]"
                     />
                   </div>
@@ -573,12 +667,24 @@ export function APITemplateFormPage() {
                               placeholder="Key"
                               value={param.key}
                               onChange={(e) => updateQueryParam(param.id, 'key', e.target.value)}
+                              onBlur={() => setTimeout(closeAcDropdown, 150)}
                               className="flex-1 border-woopi-ai-border dark:border-[#393e5c] dark:bg-[#2d3354] dark:text-[#d5d8e0] dark:placeholder:text-[#7a7f9d]"
                             />
                             <Input
                               placeholder="Value"
                               value={param.value}
-                              onChange={(e) => updateQueryParam(param.id, 'value', e.target.value)}
+                              onChange={(e) => {
+                                updateQueryParam(param.id, 'value', e.target.value);
+                                openAcDropdown(e, e.target.value, (outputKey) => {
+                                  updateQueryParam(
+                                    param.id,
+                                    'value',
+                                    insertAgentVariable(param.value, outputKey)
+                                  );
+                                  closeAcDropdown();
+                                });
+                              }}
+                              onBlur={() => setTimeout(closeAcDropdown, 150)}
                               className="flex-1 border-woopi-ai-border dark:border-[#393e5c] dark:bg-[#2d3354] dark:text-[#d5d8e0] dark:placeholder:text-[#7a7f9d]"
                             />
                             <Button
@@ -622,13 +728,27 @@ export function APITemplateFormPage() {
                               placeholder="Header Name"
                               value={header.key}
                               onChange={(e) => updateHeader(header.id, 'key', e.target.value)}
+                              onBlur={() => setTimeout(closeAcDropdown, 150)}
                               className="flex-1 border-woopi-ai-border dark:border-[#393e5c] dark:bg-[#2d3354] dark:text-[#d5d8e0] dark:placeholder:text-[#7a7f9d]"
                             />
                             <Input
                               placeholder="Value"
                               type={header.secret ? 'password' : 'text'}
                               value={header.value}
-                              onChange={(e) => updateHeader(header.id, 'value', e.target.value)}
+                              onChange={(e) => {
+                                updateHeader(header.id, 'value', e.target.value);
+                                if (!header.secret) {
+                                  openAcDropdown(e, e.target.value, (outputKey) => {
+                                    updateHeader(
+                                      header.id,
+                                      'value',
+                                      insertAgentVariable(header.value, outputKey)
+                                    );
+                                    closeAcDropdown();
+                                  });
+                                }
+                              }}
+                              onBlur={() => setTimeout(closeAcDropdown, 150)}
                               className="flex-1 border-woopi-ai-border dark:border-[#393e5c] dark:bg-[#2d3354] dark:text-[#d5d8e0] dark:placeholder:text-[#7a7f9d]"
                             />
                             <Button
@@ -700,7 +820,15 @@ export function APITemplateFormPage() {
                       <Textarea
                         placeholder='{\n  "key": "{{variable}}"\n}'
                         value={body}
-                        onChange={(e) => setBody(e.target.value)}
+                        onChange={(e) => {
+                          setBody(e.target.value);
+                          openAcDropdown(e, e.target.value, (outputKey) => {
+                            const cursorPos = e.target.selectionStart ?? e.target.value.length;
+                            setBody(prev => insertAgentVariable(prev, outputKey, cursorPos));
+                            closeAcDropdown();
+                          });
+                        }}
+                        onBlur={() => setTimeout(closeAcDropdown, 150)}
                         className={`font-mono text-sm h-full min-h-[400px] resize-none dark:bg-[#2d3354] dark:text-[#d5d8e0] dark:placeholder:text-[#7a7f9d] ${
                           bodyError
                             ? 'border-red-500 focus:border-red-500 dark:border-red-700'
@@ -717,11 +845,10 @@ export function APITemplateFormPage() {
 
                     <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-700/50">
                       <p className="text-xs text-blue-900 dark:text-blue-300">
-                        <strong>Dica:</strong> Use variáveis como{' '}
-                        <code className="bg-blue-100 px-1 py-0.5 rounded dark:bg-blue-900/40 dark:text-blue-200">{'{{ocr}}'}</code>{' '}
-                        ou{' '}
-                        <code className="bg-blue-100 px-1 py-0.5 rounded dark:bg-blue-900/40 dark:text-blue-200">{'{{prompt}}'}</code>{' '}
-                        que serão substituídas na execução.
+                        <strong>Dica:</strong> Use <code className="bg-blue-100 px-1 py-0.5 rounded dark:bg-blue-900/40 dark:text-blue-200">{'{{variavel}}'}</code>{' '}
+                        para dados dinâmicos. Digite{' '}
+                        <code className="bg-blue-100 px-1 py-0.5 rounded dark:bg-blue-900/40 dark:text-blue-200">{'{{' }</code>{' '}
+                        para inserir o output de um agente.
                       </p>
                     </div>
                   </TabsContent>
@@ -740,20 +867,48 @@ export function APITemplateFormPage() {
                           Nenhuma variável <code className="text-xs bg-woopi-ai-light-gray px-1 py-0.5 rounded dark:bg-[#2d3354]">{'{{'} {'}}'}</code> detectada no template.
                         </div>
                       ) : (
-                        <div className="space-y-2">
-                          {detectedVariables.map((varName) => (
-                            <div key={varName} className="flex items-center gap-2">
-                              <Label className="text-xs font-mono text-woopi-ai-gray whitespace-nowrap min-w-[100px] text-right">
-                                {`{{${varName}}}`}
-                              </Label>
-                              <Input
-                                placeholder={`Valor para ${varName}`}
-                                value={variableValues[varName] ?? ''}
-                                onChange={(e) => updateVariableValue(varName, e.target.value)}
-                                className="flex-1 text-sm border-woopi-ai-border dark:border-[#393e5c] dark:bg-[#2d3354] dark:text-[#d5d8e0] dark:placeholder:text-[#7a7f9d]"
-                              />
-                            </div>
-                          ))}
+                        <div className="space-y-3">
+                          {detectedVariables.map((varName) => {
+                            const agent = mockAgents.find(a => a.outputKey === varName);
+                            if (agent) {
+                              return (
+                                <div
+                                  key={varName}
+                                  className="rounded-lg border border-blue-200 dark:border-blue-700/40 bg-blue-50 dark:bg-blue-900/15 p-3 space-y-2"
+                                >
+                                  <div className="flex items-center gap-1.5">
+                                    <Bot className="w-3.5 h-3.5 text-woopi-ai-blue flex-shrink-0" />
+                                    <code className="text-xs font-mono text-woopi-ai-blue font-semibold">
+                                      {`{{${varName}}}`}
+                                    </code>
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] px-1.5 py-0 h-4 ml-auto border-blue-300 dark:border-blue-600 text-woopi-ai-blue"
+                                    >
+                                      Output de Agente
+                                    </Badge>
+                                  </div>
+                                  <p className="text-xs text-woopi-ai-gray">{agent.name}</p>
+                                  <pre className="text-[10px] font-mono leading-relaxed p-2 rounded bg-white dark:bg-[#1e2035] border border-blue-100 dark:border-blue-800/50 text-woopi-ai-dark-gray max-h-[80px] overflow-auto whitespace-pre-wrap">
+                                    {agent.mockOutput}
+                                  </pre>
+                                </div>
+                              );
+                            }
+                            return (
+                              <div key={varName} className="flex items-center gap-2">
+                                <Label className="text-xs font-mono text-woopi-ai-gray whitespace-nowrap min-w-[100px] text-right">
+                                  {`{{${varName}}}`}
+                                </Label>
+                                <Input
+                                  placeholder={`Valor para ${varName}`}
+                                  value={variableValues[varName] ?? ''}
+                                  onChange={(e) => updateVariableValue(varName, e.target.value)}
+                                  className="flex-1 text-sm border-woopi-ai-border dark:border-[#393e5c] dark:bg-[#2d3354] dark:text-[#d5d8e0] dark:placeholder:text-[#7a7f9d]"
+                                />
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -865,6 +1020,48 @@ export function APITemplateFormPage() {
           </div>
         </div>
       </div>
+
+      {/* Agent Output Autocomplete Dropdown */}
+      {acDropdown.open && (
+        <div
+          ref={acDropdownRef}
+          style={{
+            position: 'fixed',
+            top: acDropdown.top,
+            left: acDropdown.left,
+            width: acDropdown.width,
+            zIndex: 9999,
+          }}
+          className="bg-card border border-woopi-ai-border dark:border-[#393e5c] rounded-lg shadow-2xl overflow-hidden"
+        >
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-woopi-ai-border dark:border-[#393e5c] bg-blue-50 dark:bg-blue-900/20">
+            <Bot className="w-3.5 h-3.5 text-woopi-ai-blue flex-shrink-0" />
+            <span className="text-xs font-semibold text-woopi-ai-dark-gray dark:text-[#d5d8e0]">
+              Outputs de Agentes
+            </span>
+          </div>
+          <div className="max-h-52 overflow-y-auto">
+            {mockAgents.map(agent => (
+              <button
+                key={agent.id}
+                type="button"
+                className="w-full text-left px-3 py-2.5 hover:bg-woopi-ai-light-blue dark:hover:bg-blue-900/20 transition-colors border-b border-woopi-ai-border/50 dark:border-[#393e5c]/50 last:border-0"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  acDropdown.onSelect(agent.outputKey);
+                }}
+              >
+                <div className="text-sm font-medium text-woopi-ai-dark-gray dark:text-[#d5d8e0] leading-tight">
+                  {agent.name}
+                </div>
+                <div className="text-xs font-mono text-woopi-ai-blue mt-0.5">
+                  {`{{${agent.outputKey}}}`}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Import cURL Dialog */}
       <Dialog open={showImportCurlDialog} onOpenChange={setShowImportCurlDialog}>

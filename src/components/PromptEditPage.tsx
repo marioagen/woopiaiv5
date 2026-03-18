@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router';
-import { ArrowLeft, Save, Copy, Trash2, AlertCircle, Sparkles, X, PlugZap, Search } from 'lucide-react';
+import { ArrowLeft, Save, Copy, Trash2, AlertCircle, Sparkles, X, PlugZap, Search, Bot } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
 import { Checkbox } from './ui/checkbox';
 import { toast } from 'sonner@2.0.3';
+import { mockAgents, generateOutputKey } from '../data/mockAgents';
 
 interface PromptFormData {
   name: string;
@@ -270,6 +271,35 @@ export function PromptEditPage() {
                   placeholder="Digite o nome do prompt"
                   className="mt-1 border border-gray-300"
                 />
+                {formData.name.trim() && (() => {
+                  const existingAgent = isEditing ? mockAgents.find(a => a.id === id) : null;
+                  const outputKey = existingAgent?.outputKey ?? generateOutputKey(formData.name);
+                  const variable = `{{${outputKey}}}`;
+                  return (
+                    <div className="mt-2 flex items-center gap-2.5 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/40">
+                      <Bot className="w-3.5 h-3.5 text-woopi-ai-blue flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-woopi-ai-gray leading-tight mb-0.5">
+                          Output disponível em API Templates como:
+                        </p>
+                        <code className="text-xs font-mono text-woopi-ai-blue font-semibold break-all">
+                          {variable}
+                        </code>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(variable);
+                          toast.success('Variável copiada!');
+                        }}
+                        className="flex-shrink-0 p-1.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900/40 text-woopi-ai-blue transition-colors"
+                        title="Copiar variável"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div>
