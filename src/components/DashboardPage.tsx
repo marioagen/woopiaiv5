@@ -140,13 +140,13 @@ export function DashboardPage() {
                   <HelpCircle className="w-4 h-4 text-muted-foreground" />
                 </div>
                 <div className="flex items-center gap-3">
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-[#2d3354]">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground dark:text-[#d5d8e0] hover:text-foreground dark:hover:text-white hover:bg-muted dark:hover:bg-[#2d3354]">
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <span className="text-sm text-foreground min-w-[200px] text-center">
+                  <span className="text-sm text-foreground dark:text-[#d5d8e0] min-w-[200px] text-center">
                     {models.find(m => m.id === selectedModel)?.name}
                   </span>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-[#2d3354]">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground dark:text-[#d5d8e0] hover:text-foreground dark:hover:text-white hover:bg-muted dark:hover:bg-[#2d3354]">
                     <ChevronRight className="w-4 h-4" />
                   </Button>
                 </div>
