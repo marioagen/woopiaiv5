@@ -395,114 +395,150 @@ export function TeamFormPage() {
             {/* Membros */}
             <div className="space-y-2">
               <Label>Membros do Time</Label>
-              <div className="border rounded-md p-4 bg-muted">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium">Membros Selecionados ({formData.selectedMembers.length})</span>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSelectAllMembers}
-                      className="text-xs"
-                    >
-                      Selecionar Todos
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleClearAllMembers}
-                      className="text-xs"
-                    >
-                      Limpar Seleção
-                    </Button>
+              <div className="border rounded-md bg-muted overflow-hidden">
+
+                {/* ── Cabeçalho + busca fixos no topo ── */}
+                <div className="px-4 pt-4 pb-3 space-y-3 border-b border-border bg-muted">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      Membros Selecionados ({formData.selectedMembers.length})
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSelectAllMembers}
+                        className="text-xs"
+                      >
+                        Selecionar Todos
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClearAllMembers}
+                        className="text-xs"
+                      >
+                        Limpar Seleção
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Busca sempre no topo, antes dos cards */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-woopi-ai-gray w-4 h-4" />
+                    <Input
+                      placeholder="Buscar membros..."
+                      value={memberSearchTerm}
+                      onChange={(e) => setMemberSearchTerm(e.target.value)}
+                      className="pl-10 h-9 bg-card"
+                    />
                   </div>
                 </div>
-                
+
+                {/* ── Cards dos selecionados (altura fixa, scroll interno) ── */}
                 {selectedUsers.length > 0 && (
-                  <div className="space-y-2 mb-3 max-h-[280px] overflow-y-auto">
-                    {selectedUsers.map((user) => (
-                      <div key={user.id} className="flex items-center justify-between p-2 bg-card rounded border">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-8 h-8">
-                            <AvatarFallback className="bg-woopi-ai-blue text-white">
+                  <div className="px-4 pt-3 pb-2">
+                    <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1">
+                      {selectedUsers.map((user) => (
+                        <div
+                          key={user.id}
+                          className="flex items-center justify-between p-2 bg-card rounded border border-border"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar className="w-8 h-8">
+                              <AvatarFallback className="bg-woopi-ai-blue text-white text-xs">
+                                {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium text-sm">{user.name}</div>
+                              <div className="text-xs text-woopi-ai-gray">{user.email}</div>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleMemberRemove(user.id)}
+                            className="text-red-500 hover:text-red-700 h-6 w-6 p-0 flex-shrink-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Lista de usuários (todos mostrados, checkbox reflete seleção) ── */}
+                <div className="px-4 pb-3 min-h-[200px] max-h-[360px] overflow-y-auto space-y-0.5">
+                  {users
+                    .filter(user =>
+                      user.name.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
+                      user.email.toLowerCase().includes(memberSearchTerm.toLowerCase())
+                    )
+                    .sort((a, b) => {
+                      const aSelected = formData.selectedMembers.includes(a.id);
+                      const bSelected = formData.selectedMembers.includes(b.id);
+                      return aSelected === bSelected ? 0 : aSelected ? -1 : 1;
+                    })
+                    .map((user) => {
+                      const isSelected = formData.selectedMembers.includes(user.id);
+                      return (
+                        <div
+                          key={user.id}
+                          className={`flex items-center space-x-3 p-2 rounded cursor-pointer transition-colors ${
+                            isSelected
+                              ? 'bg-[#0073ea]/8 dark:bg-[#0073ea]/12 hover:bg-[#0073ea]/12 dark:hover:bg-[#0073ea]/20'
+                              : 'hover:bg-accent'
+                          }`}
+                          onClick={() =>
+                            isSelected
+                              ? handleMemberRemove(user.id)
+                              : handleMemberSelect(user.id)
+                          }
+                        >
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() =>
+                              isSelected
+                                ? handleMemberRemove(user.id)
+                                : handleMemberSelect(user.id)
+                            }
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <Avatar className="w-8 h-8 flex-shrink-0">
+                            <AvatarFallback className="bg-woopi-ai-blue text-white text-xs">
                               {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
-                            <div className="font-medium text-sm">{user.name}</div>
-                            <div className="text-xs text-woopi-ai-gray">{user.email}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className={`font-medium text-sm ${isSelected ? 'text-[#0073ea] dark:text-[#4a9ff5]' : ''}`}>
+                              {user.name}
+                            </div>
+                            <div className="text-xs text-woopi-ai-gray truncate">{user.email}</div>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {user.roles.slice(0, 2).map((role, index) => (
+                                <Badge key={index} variant="outline" className="text-xs px-1 py-0">
+                                  {role}
+                                </Badge>
+                              ))}
+                              {user.roles.length > 2 && (
+                                <Badge variant="outline" className="text-xs px-1 py-0">
+                                  +{user.roles.length - 2}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleMemberRemove(user.id)}
-                          className="text-red-500 hover:text-red-700 h-6 w-6 p-0"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                <div className="relative mb-2">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-woopi-ai-gray w-4 h-4" />
-                  <Input
-                    placeholder="Buscar membros..."
-                    value={memberSearchTerm}
-                    onChange={(e) => setMemberSearchTerm(e.target.value)}
-                    className="pl-10 h-8 bg-card"
-                  />
+                      );
+                    })}
                 </div>
-                
-                <div className="min-h-[400px] max-h-[400px] overflow-y-auto space-y-1">
-                  {users
-                    .filter(user => 
-                      (user.name.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
-                       user.email.toLowerCase().includes(memberSearchTerm.toLowerCase())) &&
-                      !formData.selectedMembers.includes(user.id)
-                    )
-                    .map((user) => (
-                      <div
-                        key={user.id}
-                        className="flex items-center space-x-3 p-2 hover:bg-accent rounded cursor-pointer"
-                        onClick={() => handleMemberSelect(user.id)}
-                      >
-                        <Checkbox
-                          checked={false}
-                          onChange={() => handleMemberSelect(user.id)}
-                        />
-                        <Avatar className="w-8 h-8">
-                          <AvatarFallback className="bg-woopi-ai-blue text-white">
-                            {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="font-medium text-sm">{user.name}</div>
-                          <div className="text-xs text-woopi-ai-gray">{user.email}</div>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {user.roles.slice(0, 2).map((role, index) => (
-                              <Badge key={index} variant="outline" className="text-xs px-1 py-0">
-                                {role}
-                              </Badge>
-                            ))}
-                            {user.roles.length > 2 && (
-                              <Badge variant="outline" className="text-xs px-1 py-0">
-                                +{user.roles.length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-                
-                {/* Add User Button */}
-                <div className="mt-4 pt-4 border-t border-woopi-ai-border">
+
+                {/* ── Add User Button ── */}
+                <div className="px-4 pb-4 pt-2 border-t border-woopi-ai-border">
                   <Button
                     type="button"
                     variant="outline"
