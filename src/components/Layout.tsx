@@ -493,13 +493,18 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
     const isExpanded = expandedGroups[group.href] ?? false;
     const hasActiveChild = group.children.some(c => currentPage === c.href);
 
-    const toggleGroup = () => {
-      setExpandedGroups(prev => ({ ...prev, [group.href]: !prev[group.href] }));
+    const handleGroupClick = () => {
+      if (!sidebarExpanded) {
+        setSidebarExpanded(true);
+        setExpandedGroups(prev => ({ ...prev, [group.href]: true }));
+      } else {
+        setExpandedGroups(prev => ({ ...prev, [group.href]: !prev[group.href] }));
+      }
     };
 
     const groupTrigger = (
       <button
-        onClick={toggleGroup}
+        onClick={handleGroupClick}
         className={`
           w-full flex items-center gap-3 rounded-lg 
           transition-all duration-200 relative
@@ -538,18 +543,9 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
           groupTrigger
         )}
 
-        {/* Sub-items */}
-        {isExpanded && sidebarExpanded && (
+        {/* Sub-items only visible when sidebar is expanded AND group is open */}
+        {sidebarExpanded && isExpanded && (
           <div className="mt-1 ml-3 pl-3 border-l border-woopi-ai-border space-y-0.5">
-            {group.children.map(child => (
-              <NavigationButton key={child.href} item={child} isChild />
-            ))}
-          </div>
-        )}
-
-        {/* Collapsed: show all children as individual tooltip icons */}
-        {!sidebarExpanded && (
-          <div className="mt-0.5 space-y-0.5">
             {group.children.map(child => (
               <NavigationButton key={child.href} item={child} isChild />
             ))}
