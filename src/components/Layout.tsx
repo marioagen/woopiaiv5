@@ -9,7 +9,6 @@ import {
   User,
   Home,
   BarChart3,
-  // Icons8 style colored icons
   Users2,
   FileText,
   ClipboardList,
@@ -23,7 +22,10 @@ import {
   FileDiff,
   Moon,
   Sun,
-  Bell
+  Bell,
+  Bot,
+  Plug,
+  Kanban,
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../hooks/useAuth';
@@ -109,7 +111,7 @@ const ColoredDocumentIcon = ({ className }: { className?: string }) => (
 
 const ColoredQuestionnaireIcon = ({ className }: { className?: string }) => (
   <div className={`${className} flex items-center justify-center`}>
-    <ClipboardList className="w-full h-full text-purple-500" />
+    <ClipboardList className="w-full h-full text-violet-500" />
   </div>
 );
 
@@ -121,7 +123,7 @@ const ColoredStyleGuideIcon = ({ className }: { className?: string }) => (
 
 const ColoredWorkflowIcon = ({ className }: { className?: string }) => (
   <div className={`${className} flex items-center justify-center`}>
-    <Workflow className="w-full h-full text-indigo-500" />
+    <Kanban className="w-full h-full text-indigo-500" />
   </div>
 );
 
@@ -145,13 +147,13 @@ const ColoredExtractionIcon = ({ className }: { className?: string }) => (
 
 const ColoredTemplateIcon = ({ className }: { className?: string }) => (
   <div className={`${className} flex items-center justify-center`}>
-    <PocketKnife className="w-full h-full text-amber-500" />
+    <PocketKnife className="w-full h-full text-violet-500" />
   </div>
 );
 
 const ColoredAPIIcon = ({ className }: { className?: string }) => (
   <div className={`${className} flex items-center justify-center`}>
-    <Zap className="w-full h-full text-blue-500" />
+    <Zap className="w-full h-full text-violet-500" />
   </div>
 );
 
@@ -185,6 +187,18 @@ const ColoredDashboardIcon = ({ className }: { className?: string }) => (
   </div>
 );
 
+const ColoredAgentesIcon = ({ className }: { className?: string }) => (
+  <div className={`${className} flex items-center justify-center`}>
+    <Bot className="w-full h-full text-violet-500" />
+  </div>
+);
+
+const ColoredConnectoresIcon = ({ className }: { className?: string }) => (
+  <div className={`${className} flex items-center justify-center`}>
+    <Plug className="w-full h-full text-violet-500" />
+  </div>
+);
+
 interface LayoutProps {
   children: React.ReactNode;
   currentPage: string;
@@ -198,6 +212,17 @@ interface NavigationItem {
   description: string;
   route?: string;
 }
+
+interface NavigationGroup {
+  type: 'group';
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  description: string;
+  children: NavigationItem[];
+}
+
+type NavEntry = NavigationItem | NavigationGroup;
 
 interface Language {
   code: string;
@@ -218,6 +243,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [selectedLanguage, setSelectedLanguage] = useState('PT');
   const [selectedTenant, setSelectedTenant] = useState('main');
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({ ferramentas: true });
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { isDark, toggleDark } = useDarkMode();
@@ -289,20 +315,13 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
     }
   ];
 
-  const navigation: NavigationItem[] = [
+  const navEntries: NavEntry[] = [
     { 
       name: 'Home', 
       href: 'home', 
       icon: ColoredHomeIcon, 
       description: 'Página inicial do sistema',
       route: '/home'
-    },
-    { 
-      name: 'Dashboard', 
-      href: 'dashboard-billing', 
-      icon: ColoredDashboardIcon, 
-      description: 'Dashboard de consumo e bilhetagem',
-      route: '/dashboard'
     },
     { 
       name: 'Gestão de Usuários', 
@@ -312,46 +331,62 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
       route: '/gestaodeusuarios'
     },
     { 
-      name: 'Agentes', 
-      href: 'prompts', 
-      icon: ColoredPromptsIcon, 
-      description: 'Gerenciar agentes de IA do sistema',
-      route: '/prompts'
-    },
-    { 
-      name: 'Questionários', 
-      href: 'questionarios', 
-      icon: ColoredQuestionnaireIcon, 
-      description: 'Gerenciar questionários do sistema',
-      route: '/questionarios'
-    },
-    { 
-      name: 'Gestão de esteiras', 
-      href: 'workflow-gestao', 
-      icon: ColoredWorkflowGestaoIcon, 
-      description: 'Gestão avançada de workflows',
-      route: '/documentos/workflow/gestao'
-    },
-    { 
-      name: 'Esteiras de processamento', 
+      name: 'Esteiras de Processamento', 
       href: 'workflow', 
       icon: ColoredWorkflowIcon, 
       description: 'Visualizar fluxo de processamento por equipes',
       route: '/documentos/workflow'
     },
     { 
-      name: 'Ferramentas', 
-      href: 'ferramentas', 
-      icon: ColoredTemplateIcon, 
-      description: 'Gerenciar ferramentas de documentos',
-      route: '/ferramentas'
+      name: 'Gestão de Esteiras', 
+      href: 'workflow-gestao', 
+      icon: ColoredWorkflowGestaoIcon, 
+      description: 'Gestão avançada de workflows',
+      route: '/documentos/workflow/gestao'
+    },
+    {
+      type: 'group',
+      name: 'Ferramentas',
+      href: 'ferramentas',
+      icon: ColoredTemplateIcon,
+      description: 'Ferramentas e integrações do sistema',
+      children: [
+        { 
+          name: 'Agentes', 
+          href: 'prompts', 
+          icon: ColoredAgentesIcon, 
+          description: 'Gerenciar agentes de IA do sistema',
+          route: '/prompts'
+        },
+        { 
+          name: 'Conectores', 
+          href: 'ferramentas', 
+          icon: ColoredConnectoresIcon, 
+          description: 'Gerenciar conectores e integrações',
+          route: '/ferramentas'
+        },
+        { 
+          name: 'Templates de API', 
+          href: 'api-templates', 
+          icon: ColoredAPIIcon, 
+          description: 'Gerenciar templates de API do sistema',
+          route: '/templates/api'
+        },
+        { 
+          name: 'Questionários', 
+          href: 'questionarios', 
+          icon: ColoredQuestionnaireIcon, 
+          description: 'Gerenciar questionários do sistema',
+          route: '/questionarios'
+        },
+      ]
     },
     { 
-      name: 'API Templates', 
-      href: 'api-templates', 
-      icon: ColoredAPIIcon, 
-      description: 'Gerenciar templates de API do sistema',
-      route: '/templates/api'
+      name: 'Painel de Consumo', 
+      href: 'dashboard-billing', 
+      icon: ColoredDashboardIcon, 
+      description: 'Painel de consumo e bilhetagem',
+      route: '/dashboard'
     },
     { 
       name: 'Análise de Extração', 
@@ -399,7 +434,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
 
   const currentTenant = tenants.find(tenant => tenant.id === selectedTenant) || tenants[0];
 
-  const NavigationButton = ({ item }: { item: NavigationItem }) => {
+  const NavigationButton = ({ item, isChild = false }: { item: NavigationItem; isChild?: boolean }) => {
     const Icon = item.icon;
     const isActive = currentPage === item.href;
     
@@ -417,26 +452,22 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
         className={`
           w-full flex items-center gap-3 rounded-lg 
           transition-all duration-200 group relative
-          ${sidebarExpanded ? 'px-3 py-3 justify-start' : 'px-3 py-2 justify-center'} 
+          ${sidebarExpanded
+            ? isChild ? 'px-3 py-2 justify-start' : 'px-3 py-3 justify-start'
+            : 'px-3 py-2 justify-center'
+          } 
           ${isActive 
             ? 'bg-woopi-ai-light-blue text-woopi-ai-blue shadow-sm' 
             : 'text-woopi-ai-gray hover:bg-woopi-ai-light-gray hover:text-woopi-ai-dark-gray'
           }
         `}
       >
-        <Icon 
-          className={`
-            flex-shrink-0 transition-all duration-200
-            ${sidebarExpanded ? 'w-5 h-5' : 'w-5 h-5'}
-          `} 
-        />
+        <Icon className="w-5 h-5 flex-shrink-0 transition-all duration-200" />
         {sidebarExpanded && (
-          <span className="text-sm font-medium truncate">
+          <span className={`font-medium truncate ${isChild ? 'text-xs' : 'text-sm'}`}>
             {item.name}
           </span>
         )}
-        
-        {/* Active indicator for collapsed state */}
         {!sidebarExpanded && isActive && (
           <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-woopi-ai-blue rounded-l-full" />
         )}
@@ -446,9 +477,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
     if (!sidebarExpanded) {
       return (
         <Tooltip delayDuration={300}>
-          <TooltipTrigger asChild>
-            {buttonElement}
-          </TooltipTrigger>
+          <TooltipTrigger asChild>{buttonElement}</TooltipTrigger>
           <TooltipContent side="right" className="ml-3">
             <p className="font-medium text-sm">{item.name}</p>
           </TooltipContent>
@@ -457,6 +486,77 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
     }
 
     return buttonElement;
+  };
+
+  const GroupButton = ({ group }: { group: NavigationGroup }) => {
+    const Icon = group.icon;
+    const isExpanded = expandedGroups[group.href] ?? false;
+    const hasActiveChild = group.children.some(c => currentPage === c.href);
+
+    const toggleGroup = () => {
+      setExpandedGroups(prev => ({ ...prev, [group.href]: !prev[group.href] }));
+    };
+
+    const groupTrigger = (
+      <button
+        onClick={toggleGroup}
+        className={`
+          w-full flex items-center gap-3 rounded-lg 
+          transition-all duration-200 relative
+          ${sidebarExpanded ? 'px-3 py-3 justify-start' : 'px-3 py-2 justify-center'}
+          ${hasActiveChild
+            ? 'bg-woopi-ai-light-blue text-woopi-ai-blue shadow-sm'
+            : 'text-woopi-ai-gray hover:bg-woopi-ai-light-gray hover:text-woopi-ai-dark-gray'
+          }
+        `}
+      >
+        <Icon className="w-5 h-5 flex-shrink-0 transition-all duration-200" />
+        {sidebarExpanded && (
+          <>
+            <span className="text-sm font-medium truncate flex-1 text-left">{group.name}</span>
+            <ChevronDown
+              className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+            />
+          </>
+        )}
+        {!sidebarExpanded && hasActiveChild && (
+          <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-woopi-ai-blue rounded-l-full" />
+        )}
+      </button>
+    );
+
+    return (
+      <div>
+        {!sidebarExpanded ? (
+          <Tooltip delayDuration={300}>
+            <TooltipTrigger asChild>{groupTrigger}</TooltipTrigger>
+            <TooltipContent side="right" className="ml-3">
+              <p className="font-medium text-sm">{group.name}</p>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          groupTrigger
+        )}
+
+        {/* Sub-items */}
+        {isExpanded && sidebarExpanded && (
+          <div className="mt-1 ml-3 pl-3 border-l border-woopi-ai-border space-y-0.5">
+            {group.children.map(child => (
+              <NavigationButton key={child.href} item={child} isChild />
+            ))}
+          </div>
+        )}
+
+        {/* Collapsed: show all children as individual tooltip icons */}
+        {!sidebarExpanded && (
+          <div className="mt-0.5 space-y-0.5">
+            {group.children.map(child => (
+              <NavigationButton key={child.href} item={child} isChild />
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const toggleSidebar = () => {
@@ -528,12 +628,16 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
 
           {/* Navigation */}
           <nav className={`
-            flex-1 py-6 space-y-2 overflow-y-auto
+            flex-1 py-6 space-y-1 overflow-y-auto
             ${sidebarExpanded ? 'px-4' : 'px-3'}
           `}>
-            {navigation.map((item) => (
-              <NavigationButton key={item.href} item={item} />
-            ))}
+            {navEntries.map((entry) =>
+              'type' in entry && entry.type === 'group' ? (
+                <GroupButton key={entry.href} group={entry as NavigationGroup} />
+              ) : (
+                <NavigationButton key={(entry as NavigationItem).href} item={entry as NavigationItem} />
+              )
+            )}
           </nav>
 
           {/* Future submenu overlay preparation */}
