@@ -23,6 +23,7 @@ import { Textarea } from './ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { SearchableSelect } from './ui/searchable-select';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { toast } from 'sonner@2.0.3';
@@ -202,38 +203,16 @@ const StageCardStep2 = ({
             <Label className="text-xs font-medium text-woopi-ai-gray uppercase tracking-wide">
               RESPONSÁVEL
             </Label>
-            <Select 
+            <SearchableSelect 
               value={localStage.perfilResponsavel} 
               onValueChange={(value) => handleUpdate({ perfilResponsavel: value })}
-            >
-              <SelectTrigger className="border border-woopi-ai-border text-sm w-full">
-                <SelectValue placeholder="Selecione o perfil responsável" />
-              </SelectTrigger>
-              <SelectContent>
-                {/* Opção Avanço automático em destaque */}
-                <SelectItem value="Avanço automático">
-                  <div className="flex items-center gap-2 py-1">
-                    <div className="w-4 h-4 bg-woopi-ai-orange rounded-sm flex items-center justify-center">
-                      <Workflow className="w-3 h-3 text-white" />
-                    </div>
-                    <span className="font-medium text-woopi-ai-orange">Avanço automático</span>
-                  </div>
-                </SelectItem>
-                
-                {/* Separador visual */}
-                <div className="h-px bg-woopi-ai-border mx-2 my-1" />
-                
-                {/* Perfis de usuários */}
-                {availableProfiles.map(profile => (
-                  <SelectItem key={profile} value={profile}>
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-woopi-ai-gray" />
-                      <span>{profile}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Selecione o perfil responsável"
+              options={[
+                { label: "Avanço automático", value: "Avanço automático" },
+                ...availableProfiles.map(profile => ({ label: profile, value: profile }))
+              ]}
+              className="border border-woopi-ai-border text-sm w-full"
+            />
           </div>
         </CardContent>
       </Card>

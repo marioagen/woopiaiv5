@@ -30,6 +30,7 @@ import { Badge } from './ui/badge';
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { SearchableSelect } from './ui/searchable-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Checkbox } from './ui/checkbox';
 import {
@@ -646,17 +647,16 @@ export function DocumentListTab() {
                   </SelectContent>
                 </Select>
                 
-                <Select value={workflowsFilter} onValueChange={handleWorkflowsFilterChange}>
-                  <SelectTrigger className="w-full sm:w-48 border border-woopi-ai-border">
-                    <SelectValue placeholder="Workflows" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os Workflows</SelectItem>
-                    {availableWorkflows.map(workflow => (
-                      <SelectItem key={workflow} value={workflow}>{workflow}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  options={[
+                    { label: "Todos os Workflows", value: "all" },
+                    ...availableWorkflows.map(w => ({ label: w, value: w }))
+                  ]}
+                  value={workflowsFilter}
+                  onValueChange={handleWorkflowsFilterChange}
+                  placeholder="Workflows"
+                  className="w-full sm:w-48 border-woopi-ai-border"
+                />
 
                 <Select value={documentTypeFilter} onValueChange={handleDocumentTypeFilterChange}>
                   <SelectTrigger className="w-full sm:w-48 border border-woopi-ai-border">

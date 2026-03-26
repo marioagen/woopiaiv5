@@ -33,7 +33,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { toast } from 'sonner@2.0.3';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+
+import { SearchableSelect } from './ui/searchable-select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 
 interface WorkflowStep {
@@ -533,16 +534,16 @@ export function WorkflowGestaoPage() {
               <div className="flex flex-wrap gap-3 w-full sm:w-auto">
                 {/* Order By Select */}
                 <div className="w-full sm:w-[200px]">
-                  <Select value={orderBy} onValueChange={(value: OrderBy) => setOrderBy(value)}>
-                    <SelectTrigger className="border-woopi-ai-border">
-                      <SelectValue placeholder="Ordenar por" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="recent">Mais Recente</SelectItem>
-                      <SelectItem value="oldest">Mais Antigo</SelectItem>
-                      <SelectItem value="alphabetical">Ordem Alfabética</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    options={[
+                      { label: "Mais Recente", value: "recent" },
+                      { label: "Mais Antigo", value: "oldest" },
+                      { label: "Ordem Alfabética", value: "alphabetical" },
+                    ]}
+                    value={orderBy}
+                    onValueChange={(value) => setOrderBy(value as OrderBy)}
+                    placeholder="Ordenar por"
+                  />
                 </div>
 
                 {/* Teams Filter */}
@@ -586,7 +587,24 @@ export function WorkflowGestaoPage() {
                 </DropdownMenu>
 
                 {/* Users Filter */}
-                {/* REMOVED */}
+                <div className="w-full sm:w-[200px]">
+                  <SearchableSelect
+                    options={[
+                      { label: "Todos os Usuários", value: "all" },
+                      ...allUsers.map((user) => ({ label: user, value: user }))
+                    ]}
+                    value={selectedUsers.length > 0 ? selectedUsers[0] : "all"}
+                    onValueChange={(val) => {
+                      if (val === "all") {
+                        setSelectedUsers([]);
+                      } else {
+                        setSelectedUsers([val]);
+                      }
+                      setCurrentPage(1);
+                    }}
+                    placeholder="Filtrar por Usuário"
+                  />
+                </div>
               </div>
 
               {/* Clear Filters Button */}
@@ -916,17 +934,18 @@ export function WorkflowGestaoPage() {
                 </p>
                 <div className="flex items-center gap-2">
                   <span className="text-sm woopi-ai-text-secondary whitespace-nowrap">por página:</span>
-                  <Select value={String(itemsPerPage)} onValueChange={handleItemsPerPageChange}>
-                    <SelectTrigger className="w-[72px] h-8 border-woopi-ai-border text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="5">5</SelectItem>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="20">20</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    options={[
+                      { label: "5", value: "5" },
+                      { label: "10", value: "10" },
+                      { label: "20", value: "20" },
+                      { label: "50", value: "50" },
+                    ]}
+                    value={String(itemsPerPage)}
+                    onValueChange={handleItemsPerPageChange}
+                    placeholder="5"
+                    className="w-[72px] h-8 text-sm"
+                  />
                 </div>
               </div>
 

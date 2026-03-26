@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { SearchableSelect } from './ui/searchable-select';
 import { 
   ArrowLeft, 
   Plus, 
@@ -156,24 +157,13 @@ const StageCard = ({ stage, onUpdate, onDelete, allStages }: {
         {/* Perfil Responsável */}
         <div className="space-y-2">
           <Label className="text-xs font-medium text-woopi-ai-gray">PERFIL RESPONSÁVEL</Label>
-          <Select 
+          <SearchableSelect 
             value={localStage.responsibleProfile} 
             onValueChange={(value) => handleUpdate({ responsibleProfile: value })}
-          >
-            <SelectTrigger className="border-woopi-ai-border">
-              <SelectValue placeholder="Selecione o perfil responsável" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableProfiles.map(profile => (
-                <SelectItem key={profile} value={profile}>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-woopi-ai-gray" />
-                    <span>{profile}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            placeholder="Selecione o perfil responsável"
+            options={availableProfiles.map(profile => ({ label: profile, value: profile }))}
+            className="border-woopi-ai-border"
+          />
         </div>
 
         {/* Botão de Automação */}

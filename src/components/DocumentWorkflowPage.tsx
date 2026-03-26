@@ -12,12 +12,13 @@ import {
 } from './ui/select';
 import { Input } from './ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
-import { Workflow, Clock, FileText, Calendar, ChevronRight, User, UserCheck, Plus, Search, ArrowUpDown, ChevronDown, FileSearch, Eye, EyeOff, Check, Undo, AlertTriangle, List, LayoutGrid, Files, Filter, File, RefreshCw, XCircle } from 'lucide-react';
+import { Workflow, Clock, FileText, Calendar, ChevronRight, User, UserCheck, Plus, Search, ArrowUpDown, ChevronDown, FileSearch, Eye, EyeOff, Check, Undo, AlertTriangle, List, LayoutGrid, Files, Filter, File, RefreshCw, XCircle, Edit } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { ScrollArea } from './ui/scroll-area';
 import { toast } from 'sonner@2.0.3';
 import { DocumentListTab } from './DocumentListTab';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
+import { SearchableSelect } from './ui/searchable-select';
 
 // Mock data for teams and their workflows
 const initialTeamWorkflows = {
@@ -587,6 +588,55 @@ const initialTeamWorkflows = {
         }
       ]
     }
+  },
+  'ti': {
+    id: 'ti',
+    name: 'Time de TI',
+    workflowName: 'Suporte Técnico Nível 2',
+    stages: [],
+    documents: {}
+  },
+  'compras': {
+    id: 'compras',
+    name: 'Time de Compras',
+    workflowName: 'Aprovação de Fornecedores',
+    stages: [],
+    documents: {}
+  },
+  'vendas': {
+    id: 'vendas',
+    name: 'Time de Vendas',
+    workflowName: 'Propostas Comerciais',
+    stages: [],
+    documents: {}
+  },
+  'marketing': {
+    id: 'marketing',
+    name: 'Time de Marketing',
+    workflowName: 'Aprovação de Campanhas',
+    stages: [],
+    documents: {}
+  },
+  'operacoes': {
+    id: 'operacoes',
+    name: 'Time de Operações',
+    workflowName: 'Gestão de Frotas',
+    stages: [],
+    documents: {}
+  },
+  'suporte': {
+    id: 'suporte',
+    name: 'Time de Suporte',
+    workflowName: 'Atendimento ao Cliente',
+    stages: [],
+    documents: {}
+  },
+  'logistica': {
+    id: 'logistica',
+    name: 'Time de Logística',
+    workflowName: 'Controle de Estoque',
+    stages: [],
+    documents: {}
   }
 };
 
@@ -1233,8 +1283,7 @@ export function DocumentWorkflowPage() {
   const getWorkflowOptions = () => {
     return Object.entries(teamWorkflows).map(([key, workflow]) => ({
       value: key,
-      label: workflow.name,
-      workflowName: workflow.workflowName
+      label: `${workflow.name} - ${workflow.workflowName}`
     }));
   };
 
@@ -1298,28 +1347,41 @@ export function DocumentWorkflowPage() {
                 </div>
                 
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                  <Select value={selectedTeam} onValueChange={handleTeamChange}>
-                    <SelectTrigger className="w-56 border border-woopi-ai-border">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getWorkflowOptions().map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          <div className="flex flex-col items-start">
-                            <span className="font-medium">{option.label}</span>
-                            <span className="text-xs text-woopi-ai-gray">{option.workflowName}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="w-56">
+                    <SearchableSelect
+                      value={selectedTeam}
+                      onValueChange={handleTeamChange}
+                      options={getWorkflowOptions()}
+                      placeholder="Selecionar Esteira"
+                      emptyMessage="Nenhuma esteira encontrada."
+                      className="border-woopi-ai-border"
+                    />
+                  </div>
 
-                  {/* Workflow Name Display */}
-                  <div className="flex items-center gap-2 px-3 py-2 bg-woopi-ai-light-gray rounded-md">
-                    <Workflow className="w-4 h-4 text-woopi-ai-blue flex-shrink-0" />
-                    <span className="text-sm font-medium text-woopi-ai-dark-gray whitespace-nowrap">
-                      {currentWorkflow.workflowName}
-                    </span>
+                  {/* Workflow Name Display with Edit Action */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-woopi-ai-light-gray rounded-md">
+                      <Workflow className="w-4 h-4 text-woopi-ai-blue flex-shrink-0" />
+                      <span className="text-sm font-medium text-woopi-ai-dark-gray whitespace-nowrap">
+                        {currentWorkflow.workflowName}
+                      </span>
+                    </div>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-woopi-ai-gray hover:text-woopi-ai-blue hover:bg-woopi-ai-light-blue/20"
+                          onClick={() => navigate(`/workflow/gestao/editar/${selectedTeam}`)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Editar configuração da esteira</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
               </div>

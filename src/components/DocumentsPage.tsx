@@ -25,6 +25,7 @@ import { Badge } from './ui/badge';
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { SearchableSelect } from './ui/searchable-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Checkbox } from './ui/checkbox';
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from './ui/pagination';
@@ -730,17 +731,21 @@ export function DocumentsPage() {
                       </SelectContent>
                     </Select>
                     
-                    <Select value={workflowsFilter} onValueChange={setWorkflowsFilter}>
-                      <SelectTrigger className="w-full sm:w-48 border border-woopi-ai-border">
-                        <SelectValue placeholder="Workflows" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos os Workflows</SelectItem>
-                        {availableWorkflows.map(workflow => (
-                          <SelectItem key={workflow} value={workflow}>{workflow}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="w-full sm:w-48">
+                      <SearchableSelect
+                        value={workflowsFilter}
+                        onValueChange={setWorkflowsFilter}
+                        options={[
+                          { value: 'all', label: 'Todos os Workflows' },
+                          ...availableWorkflows.map(workflow => ({
+                            value: workflow,
+                            label: workflow
+                          }))
+                        ]}
+                        placeholder="Workflows"
+                        emptyMessage="Nenhum workflow encontrado."
+                      />
+                    </div>
                   </div>
                 </div>
               </CardContent>
