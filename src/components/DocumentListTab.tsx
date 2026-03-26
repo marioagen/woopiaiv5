@@ -20,7 +20,9 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Filter
+  Filter,
+  UserCheck,
+  CircleX
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Button } from './ui/button';
@@ -43,6 +45,8 @@ import {
 
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 import { ScrollArea } from './ui/scroll-area';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
 import { toast } from 'sonner@2.0.3';
 
 interface Document {
@@ -101,6 +105,25 @@ export function DocumentListTab() {
   const [workflowSelectorOpen, setWorkflowSelectorOpen] = useState(false);
   const [selectedDocumentForConsult, setSelectedDocumentForConsult] = useState<Document | null>(null);
   const [workflowSearchTerm, setWorkflowSearchTerm] = useState('');
+
+  // Reprovar modal states
+  const [isReprovarModalOpen, setIsReprovarModalOpen] = useState(false);
+  const [selectedDocForReprovar, setSelectedDocForReprovar] = useState<Document | null>(null);
+  const [reprovarJustificativa, setReprovarJustificativa] = useState('');
+  const [reprovarEtapa, setReprovarEtapa] = useState('');
+
+  // Atribuir modal states
+  const [isAtribuirModalOpen, setIsAtribuirModalOpen] = useState(false);
+  const [selectedDocForAtribuir, setSelectedDocForAtribuir] = useState<Document | null>(null);
+  const [selectedResponsavel, setSelectedResponsavel] = useState('');
+
+  // Bulk Atribuir modal states
+  const [isBulkAtribuirModalOpen, setIsBulkAtribuirModalOpen] = useState(false);
+  const [bulkSelectedResponsavel, setBulkSelectedResponsavel] = useState('');
+
+  // Bulk Reprovar modal states
+  const [isBulkReprovarModalOpen, setIsBulkReprovarModalOpen] = useState(false);
+  const [bulkReprovarJustificativa, setBulkReprovarJustificativa] = useState('');
 
   // Documents data
   const [documents, setDocuments] = useState<Document[]>([
@@ -502,6 +525,30 @@ export function DocumentListTab() {
     toast.success(`${selectedDocuments.length} documento(s) excluído(s) com sucesso`);
   };
 
+  const handleConfirmBulkAtribuir = () => {
+    if (!bulkSelectedResponsavel) {
+      toast.error('Por favor, selecione um responsável.');
+      return;
+    }
+    toast.success(`${selectedDocuments.length} documento(s) atribuído(s) para: ${bulkSelectedResponsavel}`);
+    setIsBulkAtribuirModalOpen(false);
+    setBulkSelectedResponsavel('');
+    setSelectedDocuments([]);
+    setSelectAll(false);
+  };
+
+  const handleConfirmBulkReprovar = () => {
+    if (!bulkReprovarJustificativa.trim()) {
+      toast.error('Por favor, forneça uma justificativa para a reprovação.');
+      return;
+    }
+    toast.error(`${selectedDocuments.length} documento(s) reprovado(s).`);
+    setIsBulkReprovarModalOpen(false);
+    setBulkReprovarJustificativa('');
+    setSelectedDocuments([]);
+    setSelectAll(false);
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR', {
@@ -553,6 +600,46 @@ export function DocumentListTab() {
     workflow.toLowerCase().includes(workflowSearchTerm.toLowerCase())
   );
 
+  const handleOpenReprovar = (doc: Document) => {
+    setSelectedDocForReprovar(doc);
+    setReprovarJustificativa('');
+    setReprovarEtapa('');
+    setIsReprovarModalOpen(true);
+  };
+
+  const handleConfirmReprovar = () => {
+    if (!reprovarJustificativa.trim()) {
+      toast.error('Por favor, forneça uma justificativa para a reprovação.');
+      return;
+    }
+    if (!reprovarEtapa) {
+      toast.error('Por favor, selecione a etapa de retorno.');
+      return;
+    }
+    toast.error(`Documento reprovado. Retornando para: ${reprovarEtapa}`);
+    setIsReprovarModalOpen(false);
+    setSelectedDocForReprovar(null);
+    setReprovarJustificativa('');
+    setReprovarEtapa('');
+  };
+
+  const handleOpenAtribuir = (doc: Document) => {
+    setSelectedDocForAtribuir(doc);
+    setSelectedResponsavel('');
+    setIsAtribuirModalOpen(true);
+  };
+
+  const handleConfirmAtribuir = () => {
+    if (!selectedResponsavel) {
+      toast.error('Por favor, selecione um responsável.');
+      return;
+    }
+    toast.success(`Documento atribuído para: ${selectedResponsavel}`);
+    setIsAtribuirModalOpen(false);
+    setSelectedDocForAtribuir(null);
+    setSelectedResponsavel('');
+  };
+
   return (
     <div className="space-y-4">
       {/* Search and Filters */}
@@ -572,40 +659,64 @@ export function DocumentListTab() {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Bulk Delete Button - Only show when items are selected */}
+          {/* Bulk Actions Bar - Only show when items are selected */}
           {selectedDocuments.length > 0 && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-red-700">
-                  {selectedDocuments.length} item(s) selecionado(s)
-                </span>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button 
-                      variant="destructive" 
-                      size="sm"
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                    >
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      Excluir
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Tem certeza que deseja excluir {selectedDocuments.length} documento(s)? 
-                        Esta ação não pode ser desfeita.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleBulkDelete} className="bg-red-600 hover:bg-red-700">
+            <div className="mb-4 p-3 bg-woopi-ai-light-gray border border-woopi-ai-border rounded-lg">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-woopi-ai-blue text-white text-xs font-bold">
+                    {selectedDocuments.length}
+                  </div>
+                  <span className="text-sm font-medium woopi-ai-text-primary">
+                    {selectedDocuments.length === 1 ? 'documento selecionado' : 'documentos selecionados'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    onClick={() => { setBulkSelectedResponsavel(''); setIsBulkAtribuirModalOpen(true); }}
+                    className="h-8 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium gap-1.5"
+                  >
+                    <UserCheck className="w-3.5 h-3.5" />
+                    Atribuir
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => { setBulkReprovarJustificativa(''); setIsBulkReprovarModalOpen(true); }}
+                    className="h-8 bg-red-600 hover:bg-red-700 text-white text-xs font-medium gap-1.5"
+                  >
+                    <CircleX className="w-3.5 h-3.5" />
+                    Reprovar
+                  </Button>
+                  <div className="w-px h-5 bg-woopi-ai-border mx-1 hidden sm:block" />
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 text-xs font-medium gap-1.5"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
                         Excluir
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja excluir {selectedDocuments.length} documento(s)?
+                          Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleBulkDelete} className="bg-red-600 hover:bg-red-700">
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             </div>
           )}
@@ -826,6 +937,40 @@ export function DocumentListTab() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
+                                  onClick={() => handleOpenAtribuir(doc)}
+                                  className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20"
+                                >
+                                  <UserCheck className="w-4 h-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Atribuir</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleOpenReprovar(doc)}
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                                >
+                                  <CircleX className="w-4 h-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Reprovar</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   onClick={() => handleConsultWorkflow(doc)}
                                   className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20"
                                 >
@@ -1013,6 +1158,277 @@ export function DocumentListTab() {
                 )}
               </div>
             </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reprovar Modal */}
+      <Dialog open={isReprovarModalOpen} onOpenChange={(open) => {
+        setIsReprovarModalOpen(open);
+        if (!open) { setReprovarJustificativa(''); setReprovarEtapa(''); setSelectedDocForReprovar(null); }
+      }}>
+        <DialogContent className="sm:max-w-lg dark:bg-[#292f4c] dark:border-[#393e5c]">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex-shrink-0">
+                <CircleX className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <DialogTitle className="text-left text-lg font-bold dark:text-[#d5d8e0]">
+                  Reprovar Documento
+                </DialogTitle>
+                <DialogDescription className="text-left dark:text-[#9196b0]">
+                  Forneça uma justificativa e selecione para qual etapa o documento deve retornar.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="reprovar-justificativa-list" className="text-sm font-medium dark:text-[#d5d8e0]">
+                Justificativa <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                id="reprovar-justificativa-list"
+                placeholder="Descreva o motivo da reprovação..."
+                value={reprovarJustificativa}
+                onChange={(e) => setReprovarJustificativa(e.target.value)}
+                rows={4}
+                className="resize-none dark:bg-[#1f2132] dark:border-[#393e5c] dark:text-[#d5d8e0] dark:placeholder-[#6b7280]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium dark:text-[#d5d8e0]">
+                Retornar para a etapa
+              </Label>
+              <Select value={reprovarEtapa} onValueChange={setReprovarEtapa}>
+                <SelectTrigger className="dark:bg-[#1f2132] dark:border-[#393e5c] dark:text-[#d5d8e0]">
+                  <SelectValue placeholder="Selecione a etapa..." />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-[#292f4c] dark:border-[#393e5c]">
+                  <SelectItem value="Recebimento">Recebimento</SelectItem>
+                  <SelectItem value="Análise">Análise</SelectItem>
+                  <SelectItem value="Revisão">Revisão</SelectItem>
+                  <SelectItem value="Validação Fiscal">Validação Fiscal</SelectItem>
+                  <SelectItem value="Aprovação Gerencial">Aprovação Gerencial</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => { setIsReprovarModalOpen(false); setReprovarJustificativa(''); setReprovarEtapa(''); setSelectedDocForReprovar(null); }}
+              className="dark:border-[#393e5c] dark:text-[#d5d8e0] dark:hover:bg-[#2d3354]"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmReprovar}
+              className="bg-red-600 hover:bg-red-700 text-white border-0"
+            >
+              Confirmar Reprovação
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Atribuir Modal */}
+      <Dialog open={isBulkAtribuirModalOpen} onOpenChange={(open) => {
+        setIsBulkAtribuirModalOpen(open);
+        if (!open) setBulkSelectedResponsavel('');
+      }}>
+        <DialogContent className="sm:max-w-lg dark:bg-[#292f4c] dark:border-[#393e5c]">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex-shrink-0">
+                <UserCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <DialogTitle className="text-left text-lg font-bold dark:text-[#d5d8e0]">
+                  Atribuir Responsável
+                </DialogTitle>
+                <DialogDescription className="text-left dark:text-[#9196b0]">
+                  Selecione o usuário responsável por todos os {selectedDocuments.length} documento(s) selecionado(s).
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium dark:text-[#d5d8e0]">
+                Responsável <span className="text-red-500">*</span>
+              </Label>
+              <Select value={bulkSelectedResponsavel} onValueChange={setBulkSelectedResponsavel}>
+                <SelectTrigger className="dark:bg-[#1f2132] dark:border-[#393e5c] dark:text-[#d5d8e0]">
+                  <SelectValue placeholder="Selecione o usuário..." />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-[#292f4c] dark:border-[#393e5c]">
+                  <SelectItem value="Ana Silva">Ana Silva</SelectItem>
+                  <SelectItem value="Carlos Mendes">Carlos Mendes</SelectItem>
+                  <SelectItem value="Juliana Costa">Juliana Costa</SelectItem>
+                  <SelectItem value="Roberto Alves">Roberto Alves</SelectItem>
+                  <SelectItem value="Fernanda Lima">Fernanda Lima</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3">
+              <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">Documentos afetados</p>
+              <p className="text-sm text-blue-900 dark:text-blue-100 mt-0.5">
+                {selectedDocuments.length} documento(s) serão atribuídos ao responsável selecionado.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => { setIsBulkAtribuirModalOpen(false); setBulkSelectedResponsavel(''); }}
+              className="dark:border-[#393e5c] dark:text-[#d5d8e0] dark:hover:bg-[#2d3354]"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmBulkAtribuir}
+              className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+            >
+              Confirmar Atribuição
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Reprovar Modal */}
+      <Dialog open={isBulkReprovarModalOpen} onOpenChange={(open) => {
+        setIsBulkReprovarModalOpen(open);
+        if (!open) setBulkReprovarJustificativa('');
+      }}>
+        <DialogContent className="sm:max-w-lg dark:bg-[#292f4c] dark:border-[#393e5c]">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex-shrink-0">
+                <CircleX className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <DialogTitle className="text-left text-lg font-bold dark:text-[#d5d8e0]">
+                  Reprovar Documentos
+                </DialogTitle>
+                <DialogDescription className="text-left dark:text-[#9196b0]">
+                  Forneça uma justificativa comum para reprovar os {selectedDocuments.length} documento(s) selecionado(s).
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="bulk-reprovar-justificativa" className="text-sm font-medium dark:text-[#d5d8e0]">
+                Justificativa <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                id="bulk-reprovar-justificativa"
+                placeholder="Descreva o motivo da reprovação..."
+                value={bulkReprovarJustificativa}
+                onChange={(e) => setBulkReprovarJustificativa(e.target.value)}
+                rows={4}
+                className="resize-none dark:bg-[#1f2132] dark:border-[#393e5c] dark:text-[#d5d8e0] dark:placeholder-[#6b7280]"
+              />
+            </div>
+
+            <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
+              <p className="text-xs text-red-700 dark:text-red-300 font-medium">Documentos afetados</p>
+              <p className="text-sm text-red-900 dark:text-red-100 mt-0.5">
+                {selectedDocuments.length} documento(s) serão reprovados com esta justificativa.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => { setIsBulkReprovarModalOpen(false); setBulkReprovarJustificativa(''); }}
+              className="dark:border-[#393e5c] dark:text-[#d5d8e0] dark:hover:bg-[#2d3354]"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmBulkReprovar}
+              className="bg-red-600 hover:bg-red-700 text-white border-0"
+            >
+              Confirmar Reprovação
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Atribuir Modal */}
+      <Dialog open={isAtribuirModalOpen} onOpenChange={(open) => {
+        setIsAtribuirModalOpen(open);
+        if (!open) { setSelectedResponsavel(''); setSelectedDocForAtribuir(null); }
+      }}>
+        <DialogContent className="sm:max-w-lg dark:bg-[#292f4c] dark:border-[#393e5c]">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex-shrink-0">
+                <UserCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <DialogTitle className="text-left text-lg font-bold dark:text-[#d5d8e0]">
+                  Atribuir Responsável
+                </DialogTitle>
+                <DialogDescription className="text-left dark:text-[#9196b0]">
+                  Selecione o usuário que será responsável por este documento.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium dark:text-[#d5d8e0]">
+                Responsável <span className="text-red-500">*</span>
+              </Label>
+              <Select value={selectedResponsavel} onValueChange={setSelectedResponsavel}>
+                <SelectTrigger className="dark:bg-[#1f2132] dark:border-[#393e5c] dark:text-[#d5d8e0]">
+                  <SelectValue placeholder="Selecione o usuário..." />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-[#292f4c] dark:border-[#393e5c]">
+                  <SelectItem value="Ana Silva">Ana Silva</SelectItem>
+                  <SelectItem value="Carlos Mendes">Carlos Mendes</SelectItem>
+                  <SelectItem value="Juliana Costa">Juliana Costa</SelectItem>
+                  <SelectItem value="Roberto Alves">Roberto Alves</SelectItem>
+                  <SelectItem value="Fernanda Lima">Fernanda Lima</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedDocForAtribuir && (
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3">
+                <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">Documento selecionado</p>
+                <p className="text-sm text-blue-900 dark:text-blue-100 mt-0.5 truncate">{selectedDocForAtribuir.name}</p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => { setIsAtribuirModalOpen(false); setSelectedResponsavel(''); setSelectedDocForAtribuir(null); }}
+              className="dark:border-[#393e5c] dark:text-[#d5d8e0] dark:hover:bg-[#2d3354]"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmAtribuir}
+              className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+            >
+              Confirmar Atribuição
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
