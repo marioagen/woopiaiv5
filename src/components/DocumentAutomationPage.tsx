@@ -22,7 +22,14 @@ import {
   Trash2,
   GitBranch,
   ClipboardList,
-  ShieldOff
+  ShieldOff,
+  CircleHelp,
+  GripHorizontal,
+  MousePointerClick,
+  Link2,
+  PlayCircle,
+  Search,
+  ChevronDown
 } from 'lucide-react';
 import { 
   ReactFlow, 
@@ -662,6 +669,10 @@ function DocumentAutomationFlow({ stageId, navigate }: { stageId: string; naviga
   
   // Estado para controlar a visibilidade das ferramentas
   const [showTools, setShowTools] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [toolSearch, setToolSearch] = useState('');
+  const [showAllTools, setShowAllTools] = useState(false);
+  const TOOLS_ROW_LIMIT = 8;
   
   // Estado para o título editável
   const [flowTitle, setFlowTitle] = useState('Fluxo de Automação: Recebimento');
@@ -1356,43 +1367,103 @@ function DocumentAutomationFlow({ stageId, navigate }: { stageId: string; naviga
 
       {/* Ferramentas Disponíveis */}
       <div className="p-4 bg-white dark:bg-[#1a1b2e] border-b border-gray-200 dark:border-[#393e5c]">
-        <div className="flex items-center gap-4 mb-3">
-
+        <div className="flex items-center gap-3">
           <Button
-            onClick={() => setShowTools(!showTools)}
+            onClick={() => { setShowTools(!showTools); setToolSearch(''); setShowAllTools(false); }}
             size="sm"
             className="woopi-ai-button-primary flex items-center gap-2"
           >
             <Plus className={`w-4 h-4 transition-transform ${showTools ? 'rotate-45' : ''}`} />
             {showTools ? 'Ocultar Ferramentas' : 'Adicionar Ferramentas'}
           </Button>
+
+          {showTools && (
+            <div className="relative w-56 animate-in fade-in duration-150">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
+              <input
+                type="text"
+                value={toolSearch}
+                onChange={(e) => { setToolSearch(e.target.value); setShowAllTools(false); }}
+                placeholder="Buscar ferramenta..."
+                className="w-full h-8 pl-8 pr-3 text-xs rounded-md border border-gray-200 dark:border-[#393e5c] bg-gray-50 dark:bg-[#13141f] text-gray-800 dark:text-[#d5d8e0] placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-woopi-ai-blue dark:focus:ring-[#4a7dff] focus:border-woopi-ai-blue dark:focus:border-[#4a7dff] transition-colors"
+              />
+              {toolSearch && (
+                <button
+                  onClick={() => setToolSearch('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
         
-        {showTools && (
-          <div className="flex flex-wrap gap-2 animate-in slide-in-from-top-2 duration-200">
-            {availableTools.map((tool) => (
-              <Button
-                key={tool.id}
-                variant="outline"
-                size="sm"
-                onClick={() => addToolToFlow(tool)}
-                draggable={tool.id !== 'start'}
-                onDragStart={tool.id !== 'start' ? (e) => onDragStart(e, tool.id) : undefined}
-                className={`flex items-center gap-2 hover:shadow-sm ${
-                  tool.id !== 'start' ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
-                }`}
-                style={{
-                  backgroundColor: isDark ? `${tool.color}15` : tool.bgColor,
-                  borderColor: isDark ? `${tool.color}60` : tool.color,
-                  color: isDark ? tool.color : tool.textColor
-                }}
-              >
-                {tool.icon}
-                {tool.name}
-              </Button>
-            ))}
-          </div>
-        )}
+        {showTools && (() => {
+          const filtered = availableTools.filter((tool) =>
+            tool.name.toLowerCase().includes(toolSearch.toLowerCase())
+          );
+          const visibleTools = showAllTools ? filtered : filtered.slice(0, TOOLS_ROW_LIMIT);
+          const hasMore = filtered.length > TOOLS_ROW_LIMIT && !showAllTools;
+
+          return (
+            <div className="mt-3 animate-in slide-in-from-top-2 duration-200">
+              <div className="flex flex-nowrap gap-2 overflow-hidden items-center">
+                {visibleTools.map((tool) => (
+                  <Button
+                    key={tool.id}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addToolToFlow(tool)}
+                    draggable={tool.id !== 'start'}
+                    onDragStart={tool.id !== 'start' ? (e) => onDragStart(e, tool.id) : undefined}
+                    className={`flex-shrink-0 flex items-center gap-2 hover:shadow-sm ${
+                      tool.id !== 'start' ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+                    }`}
+                    style={{
+                      backgroundColor: isDark ? `${tool.color}15` : tool.bgColor,
+                      borderColor: isDark ? `${tool.color}60` : tool.color,
+                      color: isDark ? tool.color : tool.textColor
+                    }}
+                  >
+                    {tool.icon}
+                    {tool.name}
+                  </Button>
+                ))}
+
+                {hasMore && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAllTools(true)}
+                    className="flex-shrink-0 flex items-center gap-1.5 border-dashed border-gray-300 dark:border-[#393e5c] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-400 dark:hover:border-[#4a7dff]"
+                  >
+                    <ChevronDown className="w-3.5 h-3.5" />
+                    Mais {filtered.length - TOOLS_ROW_LIMIT}
+                  </Button>
+                )}
+
+                {showAllTools && filtered.length > TOOLS_ROW_LIMIT && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAllTools(false)}
+                    className="flex-shrink-0 flex items-center gap-1.5 border-dashed border-gray-300 dark:border-[#393e5c] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-400 dark:hover:border-[#4a7dff]"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Recolher
+                  </Button>
+                )}
+              </div>
+
+              {filtered.length === 0 && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 py-2">
+                  Nenhuma ferramenta encontrada para "{toolSearch}"
+                </p>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* React Flow Canvas */}
@@ -1453,6 +1524,94 @@ function DocumentAutomationFlow({ stageId, navigate }: { stageId: string; naviga
             className="dark:!bg-[#13141f] dark:!border-[#2a2d3e]"
           />
         </ReactFlow>
+
+        {/* Floating Help Button */}
+        <div className="absolute top-3 right-3 z-50">
+          <Popover open={isHelpOpen} onOpenChange={setIsHelpOpen}>
+            <PopoverTrigger asChild>
+              <button
+                aria-label="Ajuda — como usar o fluxo de automação"
+                className="group relative flex items-center justify-center w-10 h-10 rounded-full shadow-md bg-white/90 dark:bg-[#292f4c]/90 backdrop-blur-sm border border-woopi-ai-blue/40 dark:border-[#4a7dff]/40 text-woopi-ai-blue dark:text-[#7aabff] hover:bg-woopi-ai-blue/10 dark:hover:bg-[#4a7dff]/15 hover:border-woopi-ai-blue dark:hover:border-[#4a7dff] hover:shadow-lg transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-woopi-ai-blue focus-visible:ring-offset-2"
+              >
+                {/* Pulse ring — only shown when popover is closed */}
+                {!isHelpOpen && (
+                  <span className="absolute inset-0 rounded-full animate-ping bg-woopi-ai-blue/15 dark:bg-[#4a7dff]/15 pointer-events-none" />
+                )}
+                <CircleHelp className="w-4.5 h-4.5 relative z-10 transition-transform duration-200 group-hover:scale-110" />
+              </button>
+            </PopoverTrigger>
+
+            <PopoverContent
+              side="bottom"
+              align="end"
+              sideOffset={10}
+              className="w-80 p-0 shadow-xl border border-gray-200 dark:border-[#393e5c] bg-white dark:bg-[#1f2132] rounded-xl overflow-hidden"
+            >
+              {/* Header */}
+              <div className="px-4 py-3 bg-woopi-ai-blue/5 dark:bg-[#4a7dff]/10 border-b border-gray-100 dark:border-[#393e5c] flex items-center gap-2">
+                <CircleHelp className="w-4 h-4 text-woopi-ai-blue dark:text-[#7aabff] flex-shrink-0" />
+                <p className="text-sm font-semibold text-gray-900 dark:text-[#d5d8e0]">Como usar o Fluxo de Automação</p>
+              </div>
+
+              {/* Steps */}
+              <div className="px-4 py-3 space-y-3">
+                {[
+                  {
+                    icon: <GripHorizontal className="w-4 h-4" />,
+                    title: 'Arraste as ferramentas',
+                    desc: 'Clique em "Adicionar Ferramentas" e arraste as ferramentas do Woopi AI para o canvas.',
+                  },
+                  {
+                    icon: <Link2 className="w-4 h-4" />,
+                    title: 'Conecte os nós',
+                    desc: 'Arraste a alça de saída de um nó até a entrada do próximo para criar uma conexão.',
+                  },
+                  {
+                    icon: <Settings className="w-4 h-4" />,
+                    title: 'Configure cada nó',
+                    desc: 'Clique na engrenagem de cada nó para abrir o painel de configuração.',
+                  },
+                  {
+                    icon: <Save className="w-4 h-4" />,
+                    title: 'Salve e veja em ação',
+                    desc: 'Salve o fluxo e acompanhe os outputs ao analisar cada etapa após subir documentos.',
+                  },
+                ].map((step, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-woopi-ai-blue/10 dark:bg-[#4a7dff]/15 text-woopi-ai-blue dark:text-[#7aabff]">
+                      {step.icon}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-gray-800 dark:text-[#d5d8e0] leading-snug">{step.title}</p>
+                      <p className="text-xs text-gray-500 dark:text-[#9196b0] leading-relaxed mt-0.5">{step.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Video section */}
+              <div className="px-4 pb-4">
+                <div className="rounded-lg border border-gray-200 dark:border-[#393e5c] overflow-hidden">
+                  {/* Label */}
+                  <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 dark:bg-[#292f4c] border-b border-gray-200 dark:border-[#393e5c]">
+                    <PlayCircle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                    <span className="text-xs font-medium text-gray-700 dark:text-[#d5d8e0]">Assista o vídeo</span>
+                  </div>
+                  {/* Placeholder iframe — replace src with real YouTube embed URL */}
+                  <div className="relative w-full bg-gray-100 dark:bg-[#13141f]" style={{ paddingBottom: '56.25%' }}>
+                    <iframe
+                      src="https://www.youtube.com/embed/VIDEO_ID_AQUI"
+                      title="Como usar o Fluxo de Automação"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="absolute inset-0 w-full h-full border-0"
+                    />
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       {/* Painel de Configuração Off-Canvas */}
