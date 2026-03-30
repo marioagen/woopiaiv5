@@ -137,6 +137,9 @@ export function DocumentListTab() {
   // Bulk Reprovar modal states
   const [isBulkReprovarModalOpen, setIsBulkReprovarModalOpen] = useState(false);
   const [bulkReprovarJustificativa, setBulkReprovarJustificativa] = useState('');
+  const [bulkReprovarEtapa, setBulkReprovarEtapa] = useState('');
+  const [bulkReprovarAtribuir, setBulkReprovarAtribuir] = useState('');
+  const [bulkReprovarUserSearch, setBulkReprovarUserSearch] = useState('');
 
   // Documents data
   const [documents, setDocuments] = useState<Document[]>([
@@ -557,9 +560,16 @@ export function DocumentListTab() {
       toast.error('Por favor, forneça uma justificativa para a reprovação.');
       return;
     }
-    toast.error(`${selectedDocuments.length} documento(s) reprovado(s).`);
+    if (!bulkReprovarEtapa) {
+      toast.error('Por favor, selecione a etapa de retorno.');
+      return;
+    }
+    toast.error(`${selectedDocuments.length} documento(s) reprovado(s). Retornando para: ${bulkReprovarEtapa}`);
     setIsBulkReprovarModalOpen(false);
     setBulkReprovarJustificativa('');
+    setBulkReprovarEtapa('');
+    setBulkReprovarAtribuir('');
+    setBulkReprovarUserSearch('');
     setSelectedDocuments([]);
     setSelectAll(false);
   };
@@ -1414,7 +1424,7 @@ export function DocumentListTab() {
       {/* Bulk Reprovar Modal */}
       <Dialog open={isBulkReprovarModalOpen} onOpenChange={(open) => {
         setIsBulkReprovarModalOpen(open);
-        if (!open) setBulkReprovarJustificativa('');
+        if (!open) { setBulkReprovarJustificativa(''); setBulkReprovarEtapa(''); setBulkReprovarAtribuir(''); setBulkReprovarUserSearch(''); }
       }}>
         <DialogContent className="sm:max-w-lg dark:bg-[#292f4c] dark:border-[#393e5c]">
           <DialogHeader>
@@ -1427,7 +1437,7 @@ export function DocumentListTab() {
                   Reprovar Documentos
                 </DialogTitle>
                 <DialogDescription className="text-left dark:text-[#9196b0]">
-                  Forneça uma justificativa comum para reprovar os {selectedDocuments.length} documento(s) selecionado(s).
+                  Forneça uma justificativa comum e selecione para qual etapa os documentos devem retornar.
                 </DialogDescription>
               </div>
             </div>
@@ -1448,10 +1458,81 @@ export function DocumentListTab() {
               />
             </div>
 
+            {/* Atribuir a (Bulk) */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium dark:text-[#d5d8e0]">
+                Atribuir a{' '}
+                <span className="text-xs font-normal text-gray-400 dark:text-gray-500">opcional</span>
+              </Label>
+              <div className="border border-gray-200 dark:border-[#393e5c] rounded-lg overflow-hidden bg-white dark:bg-[#1f2132]">
+                <div className="relative border-b border-gray-100 dark:border-[#393e5c]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={bulkReprovarUserSearch}
+                    onChange={(e) => setBulkReprovarUserSearch(e.target.value)}
+                    placeholder="Buscar usuário..."
+                    className="w-full h-8 pl-9 pr-3 text-xs bg-gray-50 dark:bg-[#1a1b2e] text-gray-800 dark:text-[#d5d8e0] placeholder-gray-400 dark:placeholder-[#6b7280] focus:outline-none"
+                  />
+                </div>
+                <div className="max-h-36 overflow-y-auto dark:bg-[#1a1b2e]">
+                  {REPROVAR_USERS.filter(u => u.name.toLowerCase().includes(bulkReprovarUserSearch.toLowerCase())).map(user => {
+                    const isSelected = bulkReprovarAtribuir === user.value;
+                    return (
+                      <button
+                        key={user.value}
+                        type="button"
+                        onClick={() => setBulkReprovarAtribuir(isSelected ? '' : user.value)}
+                        className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-[#2d3354]'}`}
+                      >
+                        <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${user.color}`}>
+                          {user.initials}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-xs font-medium truncate ${isSelected ? 'text-[#0073ea] dark:text-[#4a9ff5]' : 'text-gray-800 dark:text-[#d5d8e0]'}`}>{user.name}</p>
+                          <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate">{user.role}</p>
+                        </div>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#0073ea] dark:text-[#4a9ff5] flex-shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {bulkReprovarAtribuir && (
+                <div className="flex items-center gap-1.5 pt-0.5">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Atribuído a:</span>
+                  <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-500/30 rounded-full px-2 py-0.5">
+                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">{REPROVAR_USERS.find(u => u.value === bulkReprovarAtribuir)?.name}</span>
+                    <button type="button" onClick={() => setBulkReprovarAtribuir('')} className="text-blue-400 hover:text-blue-600 ml-0.5">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium dark:text-[#d5d8e0]">
+                Retornar para a etapa
+              </Label>
+              <Select value={bulkReprovarEtapa} onValueChange={setBulkReprovarEtapa}>
+                <SelectTrigger className="dark:bg-[#1f2132] dark:border-[#393e5c] dark:text-[#d5d8e0]">
+                  <SelectValue placeholder="Selecione a etapa..." />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-[#292f4c] dark:border-[#393e5c]">
+                  <SelectItem value="Recebimento">Recebimento</SelectItem>
+                  <SelectItem value="Análise">Análise</SelectItem>
+                  <SelectItem value="Revisão">Revisão</SelectItem>
+                  <SelectItem value="Validação Fiscal">Validação Fiscal</SelectItem>
+                  <SelectItem value="Aprovação Gerencial">Aprovação Gerencial</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
               <p className="text-xs text-red-700 dark:text-red-300 font-medium">Documentos afetados</p>
               <p className="text-sm text-red-900 dark:text-red-100 mt-0.5">
-                {selectedDocuments.length} documento(s) serão reprovados com esta justificativa.
+                {selectedDocuments.length} documento(s) serão reprovados.
               </p>
             </div>
           </div>
@@ -1459,7 +1540,7 @@ export function DocumentListTab() {
           <div className="flex justify-end gap-3 pt-2">
             <Button
               variant="outline"
-              onClick={() => { setIsBulkReprovarModalOpen(false); setBulkReprovarJustificativa(''); }}
+              onClick={() => { setIsBulkReprovarModalOpen(false); setBulkReprovarJustificativa(''); setBulkReprovarEtapa(''); setBulkReprovarAtribuir(''); setBulkReprovarUserSearch(''); }}
               className="dark:border-[#393e5c] dark:text-[#d5d8e0] dark:hover:bg-[#2d3354]"
             >
               Cancelar
