@@ -383,7 +383,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
     },
     { 
       name: 'Painel de Consumo', 
-      href: 'dashboard-billing', 
+      href: 'dashboard',
       icon: ColoredDashboardIcon, 
       description: 'Painel de consumo e bilhetagem',
       route: '/dashboard'
