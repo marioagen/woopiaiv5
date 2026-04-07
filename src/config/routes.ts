@@ -145,6 +145,18 @@ export const routeConfig: Record<string, RouteConfig> = {
     protected: true,
     layout: true,
   },
+  'workflow-bulk-atribuir': {
+    path: '/documentos/workflow/atribuir',
+    component: 'WorkflowBulkAtribuirPage',
+    protected: true,
+    layout: true,
+  },
+  'workflow-bulk-reprovar': {
+    path: '/documentos/workflow/reprovar',
+    component: 'WorkflowBulkReprovarPage',
+    protected: true,
+    layout: true,
+  },
   'workflow-criar': {
     path: '/workflow/criar',
     component: 'WorkflowCreatePage',

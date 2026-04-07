@@ -13,8 +13,6 @@ import {
 import { Input } from './ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
 import { Checkbox } from './ui/checkbox';
 import { Workflow, Clock, FileText, Calendar, ChevronRight, User, UserCheck, Plus, Search, ArrowUpDown, ChevronDown, FileSearch, Eye, EyeOff, Check, Undo, AlertTriangle, List, LayoutGrid, Files, Filter, File, RefreshCw, XCircle, Edit, Columns3, TableProperties, MoreHorizontal, CircleX, Trash2, X } from 'lucide-react';
 import { Separator } from './ui/separator';
@@ -673,14 +671,6 @@ interface WorkflowData {
 
 type BoardDocumentSort = 'recent' | 'oldest' | 'name-asc' | 'name-desc';
 
-const BOARD_ASSIGNEE_USERS = [
-  { value: 'ana-silva', name: 'Ana Silva', role: 'Analista', initials: 'AS', color: 'bg-[#0073ea]' },
-  { value: 'carlos-mendes', name: 'Carlos Mendes', role: 'Supervisor', initials: 'CM', color: 'bg-[#0073ea]' },
-  { value: 'juliana-costa', name: 'Juliana Costa', role: 'Revisora', initials: 'JC', color: 'bg-[#0073ea]' },
-  { value: 'roberto-alves', name: 'Roberto Alves', role: 'Gerente', initials: 'RA', color: 'bg-[#0073ea]' },
-  { value: 'fernanda-lima', name: 'Fernanda Lima', role: 'Analista', initials: 'FL', color: 'bg-[#0073ea]' },
-] as const;
-
 export function DocumentWorkflowPage() {
   const navigate = useNavigate();
   const [teamWorkflows, setTeamWorkflows] = useState(initialTeamWorkflows);
@@ -715,14 +705,7 @@ export function DocumentWorkflowPage() {
 
   // Board selection (Kanban + tabela): chave "stageId::docId"
   const [selectedBoardKeys, setSelectedBoardKeys] = useState<string[]>([]);
-  const [isBulkAtribuirModalOpen, setIsBulkAtribuirModalOpen] = useState(false);
-  const [bulkSelectedResponsavel, setBulkSelectedResponsavel] = useState('');
-  const [bulkAtribuirUserSearch, setBulkAtribuirUserSearch] = useState('');
-  const [isBulkReprovarModalOpen, setIsBulkReprovarModalOpen] = useState(false);
-  const [bulkReprovarJustificativa, setBulkReprovarJustificativa] = useState('');
-  const [bulkReprovarEtapa, setBulkReprovarEtapa] = useState('');
-  const [bulkReprovarAtribuir, setBulkReprovarAtribuir] = useState('');
-  const [bulkReprovarUserSearch, setBulkReprovarUserSearch] = useState('');
+  const [collapsedStages, setCollapsedStages] = useState<Record<string, boolean>>({});
   
   const currentWorkflow = teamWorkflows[selectedTeam as keyof typeof teamWorkflows];
   
@@ -925,51 +908,10 @@ export function DocumentWorkflowPage() {
     });
   };
 
-  const handleConfirmBulkAtribuirBoard = () => {
-    if (!bulkSelectedResponsavel) {
-      toast.error('Por favor, selecione um responsável.');
-      return;
-    }
-    const userName = BOARD_ASSIGNEE_USERS.find((u) => u.value === bulkSelectedResponsavel)?.name ?? bulkSelectedResponsavel;
-    setTeamWorkflows((prev) => {
-      const next = { ...prev };
-      const wf = { ...next[selectedTeam as keyof typeof next] };
-      const docsMap = { ...wf.documents } as Record<string, DocumentCard[]>;
-      selectedBoardKeys.forEach((key) => {
-        const [stageId, docId] = key.split('::');
-        const list = docsMap[stageId];
-        if (!list) return;
-        const idx = list.findIndex((d) => d.id === docId);
-        if (idx === -1) return;
-        const copy = [...list];
-        copy[idx] = { ...copy[idx], responsavel: userName };
-        docsMap[stageId] = copy;
-      });
-      return { ...next, [selectedTeam]: { ...wf, documents: docsMap } };
+  const navigateToAction = (action: 'atribuir' | 'reprovar') => {
+    navigate(`/documentos/workflow/${action}`, {
+      state: { selectedKeys: selectedBoardKeys, returnTo: '/documentos/workflow' },
     });
-    toast.success(`${selectedBoardKeys.length} documento(s) atribuído(s) para: ${userName}`);
-    setIsBulkAtribuirModalOpen(false);
-    setBulkSelectedResponsavel('');
-    setBulkAtribuirUserSearch('');
-    setSelectedBoardKeys([]);
-  };
-
-  const handleConfirmBulkReprovarBoard = () => {
-    if (!bulkReprovarJustificativa.trim()) {
-      toast.error('Por favor, forneça uma justificativa para a reprovação.');
-      return;
-    }
-    if (!bulkReprovarEtapa) {
-      toast.error('Por favor, selecione a etapa de retorno.');
-      return;
-    }
-    toast.error(`${selectedBoardKeys.length} documento(s) reprovado(s). Retornando para: ${bulkReprovarEtapa}`);
-    setIsBulkReprovarModalOpen(false);
-    setBulkReprovarJustificativa('');
-    setBulkReprovarEtapa('');
-    setBulkReprovarAtribuir('');
-    setBulkReprovarUserSearch('');
-    setSelectedBoardKeys([]);
   };
 
   const handleBulkDeleteBoard = () => {
@@ -1121,8 +1063,6 @@ export function DocumentWorkflowPage() {
     const isLastStage = !nextStage;
     const isFirstStage = currentWorkflow.stages[0].id === stageId;
     const isFinalized = document.isFinalized || false;
-    const selKey = boardDocKey(stageId, document.id);
-    const isRowSelected = selectedBoardKeys.includes(selKey);
     
     // Verificar se é documento em lote (primeiros dois docs da coluna recebimento)
     const isBatchDocument = isBatchDoc(document, stageId, index);
@@ -1134,21 +1074,12 @@ export function DocumentWorkflowPage() {
           : isBatchDocument
             ? 'bg-card border-[1.5px] border-blue-400/80'
             : 'bg-card border border-border'
-      } ${isRowSelected ? 'ring-1 ring-woopi-ai-blue/30 ring-offset-0' : ''}`}>
+      }`}>
         {isBatchDocument && (
           <div className="h-[3px] bg-blue-400/70"></div>
         )}
         <CardContent className="p-3">
           <div className="flex items-start gap-2">
-            {!isFinalized && (
-              <Checkbox
-                checked={isRowSelected}
-                onCheckedChange={() => toggleBoardKey(selKey)}
-                onClick={(e) => e.stopPropagation()}
-                aria-label={`Selecionar ${document.name}`}
-                className="mt-0.5 shrink-0"
-              />
-            )}
             <div className="min-w-0 flex-1 space-y-2">
             {/* Título e Badge de Status */}
             <div className="flex items-start justify-between gap-2">
@@ -1286,38 +1217,18 @@ export function DocumentWorkflowPage() {
   const KanbanColumn = ({ stage }: { stage: Stage }) => {
     const isLastColumn = currentWorkflow.stages[currentWorkflow.stages.length - 1].id === stage.id;
     const documents = getStageFilteredDocuments(stage.id);
-    const stageKeys = documents.filter((d) => !d.isFinalized).map((d) => boardDocKey(stage.id, d.id));
-    const allStageSelected = stageKeys.length > 0 && stageKeys.every((k) => selectedBoardKeys.includes(k));
-    const someStageSelected = stageKeys.some((k) => selectedBoardKeys.includes(k));
     
     // Get the number of visible items for this stage
     const visibleCount = visibleCounts[stage.id] || INITIAL_VISIBLE_COUNT;
-
-    const toggleSelectAllInStage = () => {
-      if (allStageSelected) {
-        setSelectedBoardKeys((prev) => prev.filter((k) => !stageKeys.includes(k)));
-      } else {
-        setSelectedBoardKeys((prev) => Array.from(new Set([...prev, ...stageKeys])));
-      }
-    };
     
     return (
       <div className="w-80 flex-shrink-0">
         <div className={`${stage.color} rounded-t-lg border border-woopi-ai-border`}>
           <div className="p-4 flex flex-col gap-2">
-            {/* Primeira linha: Nome da etapa + selecionar etapa */}
             <div className="flex items-center justify-between gap-2">
               <h3 className="font-medium text-woopi-ai-dark-gray text-sm">
                 {stage.name}
               </h3>
-              {documents.length > 0 && (
-                <Checkbox
-                  checked={allStageSelected ? true : someStageSelected ? 'indeterminate' : false}
-                  onCheckedChange={toggleSelectAllInStage}
-                  aria-label={`Selecionar todos em ${stage.name}`}
-                  className="shrink-0"
-                />
-              )}
             </div>
             
             {/* Segunda linha: Badges e botão de toggle (apenas na última coluna) */}
@@ -1417,6 +1328,11 @@ export function DocumentWorkflowPage() {
     const selectableKeys = documents.filter((d) => !d.isFinalized).map((d) => boardDocKey(stage.id, d.id));
     const allStageSelected = selectableKeys.length > 0 && selectableKeys.every((k) => selectedBoardKeys.includes(k));
     const someStageSelected = selectableKeys.some((k) => selectedBoardKeys.includes(k));
+    const isCollapsed = !!collapsedStages[stage.id];
+
+    const toggleCollapse = () => {
+      setCollapsedStages((prev) => ({ ...prev, [stage.id]: !prev[stage.id] }));
+    };
 
     const toggleSelectAllInStageTable = () => {
       if (selectableKeys.length === 0) return;
@@ -1431,148 +1347,156 @@ export function DocumentWorkflowPage() {
 
     return (
       <div className="space-y-0">
-        {/* Stage Header */}
-        <div className={`${stage.color} px-4 py-3 flex items-center justify-between border border-woopi-ai-border rounded-t-lg`}>
+        <button
+          type="button"
+          onClick={toggleCollapse}
+          className={`${stage.color} w-full px-4 py-3 flex items-center justify-between border border-woopi-ai-border ${isCollapsed ? 'rounded-lg' : 'rounded-t-lg'} cursor-pointer select-none transition-colors hover:brightness-95 dark:hover:brightness-110`}
+        >
           <div className="flex items-center gap-3">
+            <ChevronDown className={`w-4 h-4 text-woopi-ai-dark-gray transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
             <h3 className="font-semibold text-sm text-woopi-ai-dark-gray">{stage.name}</h3>
             <Badge className="bg-white/60 dark:bg-white/10 text-woopi-ai-dark-gray text-xs px-2 py-0.5 font-medium">
               {documents.length}
             </Badge>
           </div>
-        </div>
+        </button>
         
-        {documents.length > 0 ? (
-          <div className="border-l border-r border-b border-woopi-ai-border rounded-b-lg overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/30 hover:bg-muted/30 dark:hover:bg-muted/30">
-                  <TableHead className="w-10 pl-3">
-                    {selectableKeys.length > 0 && (
-                      <Checkbox
-                        checked={allStageSelected ? true : someStageSelected ? 'indeterminate' : false}
-                        onCheckedChange={toggleSelectAllInStageTable}
-                        aria-label={`Selecionar todos em ${stage.name}`}
-                      />
-                    )}
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[120px]">ID</TableHead>
-                  <TableHead className="text-xs font-semibold text-woopi-ai-gray">Documento</TableHead>
-                  <TableHead className="text-xs font-semibold text-woopi-ai-gray min-w-[12ch] max-w-[18ch] sm:max-w-[28ch] md:max-w-[40ch] lg:max-w-[52ch]">Descrição</TableHead>
-                  <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[110px]">Data</TableHead>
-                  <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[130px]">Status</TableHead>
-                  <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[140px]">Solicitante</TableHead>
-                  <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[140px]">Responsável</TableHead>
-                  <TableHead className="text-xs font-semibold text-woopi-ai-gray w-14 text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {documents.map((doc) => {
-                  const isFinalized = doc.isFinalized || false;
-                  
-                  return (
-                    <TableRow 
-                      key={doc.id} 
-                      className={isFinalized ? 'opacity-50 bg-muted/20' : ''}
-                    >
-                      <TableCell className="w-10 pl-3">
-                        {!isFinalized ? (
+        {!isCollapsed && (
+          <>
+            {documents.length > 0 ? (
+              <div className="border-l border-r border-b border-woopi-ai-border rounded-b-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/30 hover:bg-muted/30 dark:hover:bg-muted/30">
+                      <TableHead className="w-10 pl-3">
+                        {selectableKeys.length > 0 && (
                           <Checkbox
-                            checked={selectedBoardKeys.includes(boardDocKey(stage.id, doc.id))}
-                            onCheckedChange={() => toggleBoardKey(boardDocKey(stage.id, doc.id))}
-                            aria-label={`Selecionar ${doc.name}`}
+                            checked={allStageSelected ? true : someStageSelected ? 'indeterminate' : false}
+                            onCheckedChange={toggleSelectAllInStageTable}
+                            aria-label={`Selecionar todos em ${stage.name}`}
                           />
-                        ) : null}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs font-semibold text-woopi-ai-blue">
-                        {doc.id}
-                      </TableCell>
-                      <TableCell>
-                        <span className={`text-sm font-medium ${isFinalized ? 'text-muted-foreground' : 'text-foreground'}`}>
-                          {doc.name}
-                        </span>
-                      </TableCell>
-                      <TableCell className="min-w-0 max-w-[18ch] sm:max-w-[28ch] md:max-w-[40ch] lg:max-w-[52ch] whitespace-normal py-2 align-middle">
-                        <div
-                          className="w-full min-w-0 truncate text-xs text-muted-foreground"
-                          title={doc.description}
-                        >
-                          {doc.description}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {formatDate(doc.uploadDate)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={`${getStatusColor(isFinalized ? 'Finalizado' : doc.status)} text-[11px] px-2 py-0.5 whitespace-nowrap`}>
-                          {isFinalized ? 'Finalizado' : (isLastStage && doc.status === 'Concluído' ? 'Finalizado' : doc.status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{doc.solicitante}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{doc.responsavel}</TableCell>
-                      <TableCell className="text-right w-14">
-                        {!isFinalized && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-woopi-ai-gray hover:text-woopi-ai-blue hover:bg-woopi-ai-light-blue/30"
-                                aria-label="Ações do documento"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="min-w-[10rem]">
-                              <DropdownMenuItem
-                                onClick={() => handleAnalyzeDocument(doc.id)}
-                                className="cursor-pointer"
-                              >
-                                <FileSearch className="mr-2 h-4 w-4 text-[#0073ea]" />
-                                Analisar
-                              </DropdownMenuItem>
-                              {!isLastStage && (
-                                <DropdownMenuItem
-                                  onClick={() => handleAdvanceDocument(doc.id, stage.id)}
-                                  className="cursor-pointer"
-                                >
-                                  <ChevronRight className="mr-2 h-4 w-4 text-[#0073ea]" />
-                                  Avançar
-                                </DropdownMenuItem>
-                              )}
-                              {isLastStage && (
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setDocumentToFinalize({ id: doc.id, stageId: stage.id });
-                                    setIsFinalizeModalOpen(true);
-                                  }}
-                                  className="cursor-pointer text-green-600 focus:text-green-600 focus:bg-green-50 dark:focus:bg-green-500/10"
-                                >
-                                  <Check className="mr-2 h-4 w-4" />
-                                  Finalizar
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
                         )}
-                        {isFinalized && (
-                          <span className="text-xs text-green-600 font-medium">✓ Finalizado</span>
-                        )}
-                      </TableCell>
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[120px]">ID</TableHead>
+                      <TableHead className="text-xs font-semibold text-woopi-ai-gray">Documento</TableHead>
+                      <TableHead className="text-xs font-semibold text-woopi-ai-gray min-w-[12ch] max-w-[18ch] sm:max-w-[28ch] md:max-w-[40ch] lg:max-w-[52ch]">Descrição</TableHead>
+                      <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[110px]">Data</TableHead>
+                      <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[130px]">Status</TableHead>
+                      <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[140px]">Solicitante</TableHead>
+                      <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[140px]">Responsável</TableHead>
+                      <TableHead className="text-xs font-semibold text-woopi-ai-gray w-14 text-right">Ações</TableHead>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <div className="border-l border-r border-b border-woopi-ai-border rounded-b-lg p-6 text-center text-woopi-ai-gray text-sm">
-            {searchTerm.trim()
-              ? 'Nenhum documento encontrado com os critérios de busca'
-              : kanbanBatchFilter !== 'all'
-                ? `Nenhum documento ${kanbanBatchFilter === 'batch' ? 'em lote' : 'único'} nesta etapa`
-                : 'Nenhum documento nesta etapa'}
-          </div>
+                  </TableHeader>
+                  <TableBody>
+                    {documents.map((doc) => {
+                      const isFinalized = doc.isFinalized || false;
+                      
+                      return (
+                        <TableRow 
+                          key={doc.id} 
+                          className={isFinalized ? 'opacity-50 bg-muted/20' : ''}
+                        >
+                          <TableCell className="w-10 pl-3">
+                            {!isFinalized ? (
+                              <Checkbox
+                                checked={selectedBoardKeys.includes(boardDocKey(stage.id, doc.id))}
+                                onCheckedChange={() => toggleBoardKey(boardDocKey(stage.id, doc.id))}
+                                aria-label={`Selecionar ${doc.name}`}
+                              />
+                            ) : null}
+                          </TableCell>
+                          <TableCell className="font-mono text-xs font-semibold text-woopi-ai-blue">
+                            {doc.id}
+                          </TableCell>
+                          <TableCell>
+                            <span className={`text-sm font-medium ${isFinalized ? 'text-muted-foreground' : 'text-foreground'}`}>
+                              {doc.name}
+                            </span>
+                          </TableCell>
+                          <TableCell className="min-w-0 max-w-[18ch] sm:max-w-[28ch] md:max-w-[40ch] lg:max-w-[52ch] whitespace-normal py-2 align-middle">
+                            <div
+                              className="w-full min-w-0 truncate text-xs text-muted-foreground"
+                              title={doc.description}
+                            >
+                              {doc.description}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {formatDate(doc.uploadDate)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={`${getStatusColor(isFinalized ? 'Finalizado' : doc.status)} text-[11px] px-2 py-0.5 whitespace-nowrap`}>
+                              {isFinalized ? 'Finalizado' : (isLastStage && doc.status === 'Concluído' ? 'Finalizado' : doc.status)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{doc.solicitante}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{doc.responsavel}</TableCell>
+                          <TableCell className="text-right w-14">
+                            {!isFinalized && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-woopi-ai-gray hover:text-woopi-ai-blue hover:bg-woopi-ai-light-blue/30"
+                                    aria-label="Ações do documento"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="min-w-[10rem]">
+                                  <DropdownMenuItem
+                                    onClick={() => handleAnalyzeDocument(doc.id)}
+                                    className="cursor-pointer"
+                                  >
+                                    <FileSearch className="mr-2 h-4 w-4 text-[#0073ea]" />
+                                    Analisar
+                                  </DropdownMenuItem>
+                                  {!isLastStage && (
+                                    <DropdownMenuItem
+                                      onClick={() => handleAdvanceDocument(doc.id, stage.id)}
+                                      className="cursor-pointer"
+                                    >
+                                      <ChevronRight className="mr-2 h-4 w-4 text-[#0073ea]" />
+                                      Avançar
+                                    </DropdownMenuItem>
+                                  )}
+                                  {isLastStage && (
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setDocumentToFinalize({ id: doc.id, stageId: stage.id });
+                                        setIsFinalizeModalOpen(true);
+                                      }}
+                                      className="cursor-pointer text-green-600 focus:text-green-600 focus:bg-green-50 dark:focus:bg-green-500/10"
+                                    >
+                                      <Check className="mr-2 h-4 w-4" />
+                                      Finalizar
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                            {isFinalized && (
+                              <span className="text-xs text-green-600 font-medium">✓ Finalizado</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="border-l border-r border-b border-woopi-ai-border rounded-b-lg p-6 text-center text-woopi-ai-gray text-sm">
+                {searchTerm.trim()
+                  ? 'Nenhum documento encontrado com os critérios de busca'
+                  : kanbanBatchFilter !== 'all'
+                    ? `Nenhum documento ${kanbanBatchFilter === 'batch' ? 'em lote' : 'único'} nesta etapa`
+                    : 'Nenhum documento nesta etapa'}
+              </div>
+            )}
+          </>
         )}
       </div>
     );
@@ -1765,7 +1689,7 @@ export function DocumentWorkflowPage() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
-                        onClick={() => setBoardViewMode('kanban')}
+                        onClick={() => { setBoardViewMode('kanban'); setSelectedBoardKeys([]); }}
                         className={`h-full px-2.5 flex items-center justify-center transition-colors ${
                           boardViewMode === 'kanban'
                             ? 'bg-woopi-ai-light-blue text-woopi-ai-blue'
@@ -1805,8 +1729,8 @@ export function DocumentWorkflowPage() {
                 </Button>
               </div>
 
-              {/* Linha 3: Barra de seleção em massa — só aparece quando há seleção */}
-              {selectedBoardKeys.length > 0 && (
+              {/* Linha 3: Barra de seleção em massa — só aparece na visualização em tabela */}
+              {boardViewMode === 'table' && selectedBoardKeys.length > 0 && (
                 <>
                   <div className="border-t border-woopi-ai-border -mx-4 px-0" />
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
@@ -1821,11 +1745,7 @@ export function DocumentWorkflowPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <Button
                         size="sm"
-                        onClick={() => {
-                          setBulkSelectedResponsavel('');
-                          setBulkAtribuirUserSearch('');
-                          setIsBulkAtribuirModalOpen(true);
-                        }}
+                        onClick={() => navigateToAction('atribuir')}
                         className="h-8 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium gap-1.5"
                       >
                         <UserCheck className="w-3.5 h-3.5" />
@@ -1833,10 +1753,7 @@ export function DocumentWorkflowPage() {
                       </Button>
                       <Button
                         size="sm"
-                        onClick={() => {
-                          setBulkReprovarJustificativa('');
-                          setIsBulkReprovarModalOpen(true);
-                        }}
+                        onClick={() => navigateToAction('reprovar')}
                         className="h-8 bg-red-600 hover:bg-red-700 text-white text-xs font-medium gap-1.5"
                       >
                         <CircleX className="w-3.5 h-3.5" />
@@ -1931,255 +1848,6 @@ export function DocumentWorkflowPage() {
       ) : (
         <DocumentListTab />
       )}
-
-      {/* Bulk Atribuir (board) */}
-      <Dialog open={isBulkAtribuirModalOpen} onOpenChange={(open) => {
-        setIsBulkAtribuirModalOpen(open);
-        if (!open) {
-          setBulkSelectedResponsavel('');
-          setBulkAtribuirUserSearch('');
-        }
-      }}>
-        <DialogContent className="sm:max-w-lg dark:bg-[#292f4c] dark:border-[#393e5c]">
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex-shrink-0">
-                <UserCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <DialogTitle className="text-left text-lg font-bold dark:text-[#d5d8e0]">
-                  Atribuir Responsável
-                </DialogTitle>
-                <DialogDescription className="text-left dark:text-[#9196b0]">
-                  Selecione o usuário responsável por todos os {selectedBoardKeys.length} documento(s) selecionado(s).
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium dark:text-[#d5d8e0]">
-                Responsável <span className="text-red-500">*</span>
-              </Label>
-              <div className="border border-gray-200 dark:border-[#393e5c] rounded-lg overflow-hidden bg-white dark:bg-[#1f2132]">
-                <div className="relative border-b border-gray-100 dark:border-[#393e5c]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={bulkAtribuirUserSearch}
-                    onChange={(e) => setBulkAtribuirUserSearch(e.target.value)}
-                    placeholder="Buscar usuário..."
-                    className="w-full h-8 pl-9 pr-3 text-xs bg-gray-50 dark:bg-[#1a1b2e] text-gray-800 dark:text-[#d5d8e0] placeholder-gray-400 dark:placeholder-[#6b7280] focus:outline-none"
-                  />
-                </div>
-                <div className="max-h-36 overflow-y-auto dark:bg-[#1a1b2e]">
-                  {BOARD_ASSIGNEE_USERS.filter((u) => u.name.toLowerCase().includes(bulkAtribuirUserSearch.toLowerCase())).map((user) => {
-                    const isSelected = bulkSelectedResponsavel === user.value;
-                    return (
-                      <button
-                        key={user.value}
-                        type="button"
-                        onClick={() => setBulkSelectedResponsavel(isSelected ? '' : user.value)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-[#2d3354]'}`}
-                      >
-                        <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${user.color}`}>
-                          {user.initials}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-medium truncate ${isSelected ? 'text-[#0073ea] dark:text-[#4a9ff5]' : 'text-gray-800 dark:text-[#d5d8e0]'}`}>{user.name}</p>
-                          <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate">{user.role}</p>
-                        </div>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-[#0073ea] dark:text-[#4a9ff5] flex-shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              {bulkSelectedResponsavel && (
-                <div className="flex items-center gap-1.5 pt-0.5">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Atribuído a:</span>
-                  <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-500/30 rounded-full px-2 py-0.5">
-                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                      {BOARD_ASSIGNEE_USERS.find((u) => u.value === bulkSelectedResponsavel)?.name}
-                    </span>
-                    <button type="button" onClick={() => setBulkSelectedResponsavel('')} className="text-blue-400 hover:text-blue-600 ml-0.5">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3">
-              <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">Documentos afetados</p>
-              <p className="text-sm text-blue-900 dark:text-blue-100 mt-0.5">
-                {selectedBoardKeys.length} documento(s) serão atribuídos ao responsável selecionado.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsBulkAtribuirModalOpen(false);
-                setBulkSelectedResponsavel('');
-                setBulkAtribuirUserSearch('');
-              }}
-              className="dark:border-[#393e5c] dark:text-[#d5d8e0] dark:hover:bg-[#2d3354]"
-            >
-              Cancelar
-            </Button>
-            <Button onClick={handleConfirmBulkAtribuirBoard} className="bg-blue-600 hover:bg-blue-700 text-white border-0">
-              Confirmar Atribuição
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Bulk Reprovar (board) */}
-      <Dialog open={isBulkReprovarModalOpen} onOpenChange={(open) => {
-        setIsBulkReprovarModalOpen(open);
-        if (!open) {
-          setBulkReprovarJustificativa('');
-          setBulkReprovarEtapa('');
-          setBulkReprovarAtribuir('');
-          setBulkReprovarUserSearch('');
-        }
-      }}>
-        <DialogContent className="sm:max-w-lg dark:bg-[#292f4c] dark:border-[#393e5c]">
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex-shrink-0">
-                <CircleX className="w-5 h-5 text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <DialogTitle className="text-left text-lg font-bold dark:text-[#d5d8e0]">
-                  Reprovar Documentos
-                </DialogTitle>
-                <DialogDescription className="text-left dark:text-[#9196b0]">
-                  Forneça uma justificativa comum e selecione para qual etapa os documentos devem retornar.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="bulk-reprovar-board" className="text-sm font-medium dark:text-[#d5d8e0]">
-                Justificativa <span className="text-red-500">*</span>
-              </Label>
-              <Textarea
-                id="bulk-reprovar-board"
-                placeholder="Descreva o motivo da reprovação..."
-                value={bulkReprovarJustificativa}
-                onChange={(e) => setBulkReprovarJustificativa(e.target.value)}
-                rows={4}
-                className="resize-none dark:bg-[#1f2132] dark:border-[#393e5c] dark:text-[#d5d8e0] dark:placeholder-[#6b7280]"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium dark:text-[#d5d8e0]">
-                Atribuir a{' '}
-                <span className="text-xs font-normal text-gray-400 dark:text-gray-500">opcional</span>
-              </Label>
-              <div className="border border-gray-200 dark:border-[#393e5c] rounded-lg overflow-hidden bg-white dark:bg-[#1f2132]">
-                <div className="relative border-b border-gray-100 dark:border-[#393e5c]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={bulkReprovarUserSearch}
-                    onChange={(e) => setBulkReprovarUserSearch(e.target.value)}
-                    placeholder="Buscar usuário..."
-                    className="w-full h-8 pl-9 pr-3 text-xs bg-gray-50 dark:bg-[#1a1b2e] text-gray-800 dark:text-[#d5d8e0] placeholder-gray-400 dark:placeholder-[#6b7280] focus:outline-none"
-                  />
-                </div>
-                <div className="max-h-36 overflow-y-auto dark:bg-[#1a1b2e]">
-                  {BOARD_ASSIGNEE_USERS.filter((u) => u.name.toLowerCase().includes(bulkReprovarUserSearch.toLowerCase())).map((user) => {
-                    const isSelected = bulkReprovarAtribuir === user.value;
-                    return (
-                      <button
-                        key={user.value}
-                        type="button"
-                        onClick={() => setBulkReprovarAtribuir(isSelected ? '' : user.value)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-[#2d3354]'}`}
-                      >
-                        <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${user.color}`}>
-                          {user.initials}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-medium truncate ${isSelected ? 'text-[#0073ea] dark:text-[#4a9ff5]' : 'text-gray-800 dark:text-[#d5d8e0]'}`}>{user.name}</p>
-                          <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate">{user.role}</p>
-                        </div>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-[#0073ea] dark:text-[#4a9ff5] flex-shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              {bulkReprovarAtribuir && (
-                <div className="flex items-center gap-1.5 pt-0.5">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Atribuído a:</span>
-                  <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-500/30 rounded-full px-2 py-0.5">
-                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                      {BOARD_ASSIGNEE_USERS.find((u) => u.value === bulkReprovarAtribuir)?.name}
-                    </span>
-                    <button type="button" onClick={() => setBulkReprovarAtribuir('')} className="text-blue-400 hover:text-blue-600 ml-0.5">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium dark:text-[#d5d8e0]">
-                Retornar para a etapa
-              </Label>
-              <Select value={bulkReprovarEtapa} onValueChange={setBulkReprovarEtapa}>
-                <SelectTrigger className="dark:bg-[#1f2132] dark:border-[#393e5c] dark:text-[#d5d8e0]">
-                  <SelectValue placeholder="Selecione a etapa..." />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-[#292f4c] dark:border-[#393e5c]">
-                  <SelectItem value="Recebimento">Recebimento</SelectItem>
-                  <SelectItem value="Análise">Análise</SelectItem>
-                  <SelectItem value="Revisão">Revisão</SelectItem>
-                  <SelectItem value="Validação Fiscal">Validação Fiscal</SelectItem>
-                  <SelectItem value="Aprovação Gerencial">Aprovação Gerencial</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
-              <p className="text-xs text-red-700 dark:text-red-300 font-medium">Documentos afetados</p>
-              <p className="text-sm text-red-900 dark:text-red-100 mt-0.5">
-                {selectedBoardKeys.length} documento(s) serão reprovados.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsBulkReprovarModalOpen(false);
-                setBulkReprovarJustificativa('');
-                setBulkReprovarEtapa('');
-                setBulkReprovarAtribuir('');
-                setBulkReprovarUserSearch('');
-              }}
-              className="dark:border-[#393e5c] dark:text-[#d5d8e0] dark:hover:bg-[#2d3354]"
-            >
-              Cancelar
-            </Button>
-            <Button onClick={handleConfirmBulkReprovarBoard} className="bg-red-600 hover:bg-red-700 text-white border-0">
-              Confirmar Reprovação
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Finalize Confirmation Modal */}
       <Dialog open={isFinalizeModalOpen} onOpenChange={setIsFinalizeModalOpen}>

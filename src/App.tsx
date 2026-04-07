@@ -11,6 +11,8 @@ import { DocumentExtractionPage } from './components/DocumentExtractionPage';
 import { FerramentasManagementPage } from './components/FerramentasManagementPage';
 import { FerramentasCreatePage } from './components/FerramentasCreatePage';
 import { DocumentWorkflowPage } from './components/DocumentWorkflowPage';
+import { WorkflowBulkAtribuirPage } from './components/workflow-board/WorkflowBulkAtribuirPage';
+import { WorkflowBulkReprovarPage } from './components/workflow-board/WorkflowBulkReprovarPage';
 import { WorkflowManagementPage } from './components/WorkflowManagementPage';
 import { WorkflowEditorPage } from './components/WorkflowEditorPage';
 import { WorkflowCreatePage } from './components/WorkflowCreatePage';
@@ -158,6 +160,24 @@ export default function App() {
           element={
             <LayoutWrapper>
               <DocumentWorkflowPage />
+              <Toaster position="top-right" />
+            </LayoutWrapper>
+          } 
+        />
+        <Route 
+          path="/documentos/workflow/atribuir" 
+          element={
+            <LayoutWrapper>
+              <WorkflowBulkAtribuirPage />
+              <Toaster position="top-right" />
+            </LayoutWrapper>
+          } 
+        />
+        <Route 
+          path="/documentos/workflow/reprovar" 
+          element={
+            <LayoutWrapper>
+              <WorkflowBulkReprovarPage />
               <Toaster position="top-right" />
             </LayoutWrapper>
           } 
