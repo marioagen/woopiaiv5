@@ -1,16 +1,11 @@
-import React, { useState, useRef } from 'react';
+import { useState } from 'react';
 import { 
   Plus, 
   Search, 
-  Edit, 
   Trash2, 
-  Download,
   Eye,
-  Upload,
   File,
   Files,
-  FileText,
-  Image,
   X,
   ChevronDown,
   ChevronUp,
@@ -21,14 +16,11 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Filter,
-  UserCheck,
-  CircleX,
-  Check
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
@@ -46,8 +38,6 @@ import {
 
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 import { ScrollArea } from './ui/scroll-area';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
 import { toast } from 'sonner';
 
 interface Document {
@@ -106,40 +96,6 @@ export function DocumentListTab() {
   const [workflowSelectorOpen, setWorkflowSelectorOpen] = useState(false);
   const [selectedDocumentForConsult, setSelectedDocumentForConsult] = useState<Document | null>(null);
   const [workflowSearchTerm, setWorkflowSearchTerm] = useState('');
-
-  // Reprovar modal states
-  const [isReprovarModalOpen, setIsReprovarModalOpen] = useState(false);
-  const [selectedDocForReprovar, setSelectedDocForReprovar] = useState<Document | null>(null);
-  const [reprovarJustificativa, setReprovarJustificativa] = useState('');
-  const [reprovarEtapa, setReprovarEtapa] = useState('');
-  const [reprovarAtribuir, setReprovarAtribuir] = useState('');
-  const [reprovarUserSearch, setReprovarUserSearch] = useState('');
-
-  const REPROVAR_USERS = [
-    { value: 'ana-silva', name: 'Ana Silva', role: 'Analista', initials: 'AS', color: 'bg-[#0073ea]' },
-    { value: 'carlos-mendes', name: 'Carlos Mendes', role: 'Supervisor', initials: 'CM', color: 'bg-[#0073ea]' },
-    { value: 'juliana-costa', name: 'Juliana Costa', role: 'Revisora', initials: 'JC', color: 'bg-[#0073ea]' },
-    { value: 'roberto-alves', name: 'Roberto Alves', role: 'Gerente', initials: 'RA', color: 'bg-[#0073ea]' },
-    { value: 'fernanda-lima', name: 'Fernanda Lima', role: 'Analista', initials: 'FL', color: 'bg-[#0073ea]' },
-  ];
-
-  // Atribuir modal states
-  const [isAtribuirModalOpen, setIsAtribuirModalOpen] = useState(false);
-  const [selectedDocForAtribuir, setSelectedDocForAtribuir] = useState<Document | null>(null);
-  const [selectedResponsavel, setSelectedResponsavel] = useState('');
-  const [atribuirUserSearch, setAtribuirUserSearch] = useState('');
-
-  // Bulk Atribuir modal states
-  const [isBulkAtribuirModalOpen, setIsBulkAtribuirModalOpen] = useState(false);
-  const [bulkSelectedResponsavel, setBulkSelectedResponsavel] = useState('');
-  const [bulkAtribuirUserSearch, setBulkAtribuirUserSearch] = useState('');
-
-  // Bulk Reprovar modal states
-  const [isBulkReprovarModalOpen, setIsBulkReprovarModalOpen] = useState(false);
-  const [bulkReprovarJustificativa, setBulkReprovarJustificativa] = useState('');
-  const [bulkReprovarEtapa, setBulkReprovarEtapa] = useState('');
-  const [bulkReprovarAtribuir, setBulkReprovarAtribuir] = useState('');
-  const [bulkReprovarUserSearch, setBulkReprovarUserSearch] = useState('');
 
   // Documents data
   const [documents, setDocuments] = useState<Document[]>([
@@ -541,70 +497,6 @@ export function DocumentListTab() {
     toast.success(`${selectedDocuments.length} documento(s) excluído(s) com sucesso`);
   };
 
-  const handleConfirmBulkAtribuir = () => {
-    if (!bulkSelectedResponsavel) {
-      toast.error('Por favor, selecione um responsável.');
-      return;
-    }
-    const userName = REPROVAR_USERS.find(u => u.value === bulkSelectedResponsavel)?.name ?? bulkSelectedResponsavel;
-    toast.success(`${selectedDocuments.length} documento(s) atribuído(s) para: ${userName}`);
-    setIsBulkAtribuirModalOpen(false);
-    setBulkSelectedResponsavel('');
-    setBulkAtribuirUserSearch('');
-    setSelectedDocuments([]);
-    setSelectAll(false);
-  };
-
-  const handleConfirmBulkReprovar = () => {
-    if (!bulkReprovarJustificativa.trim()) {
-      toast.error('Por favor, forneça uma justificativa para a reprovação.');
-      return;
-    }
-    if (!bulkReprovarEtapa) {
-      toast.error('Por favor, selecione a etapa de retorno.');
-      return;
-    }
-    toast.error(`${selectedDocuments.length} documento(s) reprovado(s). Retornando para: ${bulkReprovarEtapa}`);
-    setIsBulkReprovarModalOpen(false);
-    setBulkReprovarJustificativa('');
-    setBulkReprovarEtapa('');
-    setBulkReprovarAtribuir('');
-    setBulkReprovarUserSearch('');
-    setSelectedDocuments([]);
-    setSelectAll(false);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const getFileIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'pdf':
-        return <File className="w-4 h-4 text-red-600" />;
-      case 'excel':
-      case 'xlsx':
-        return <FileText className="w-4 h-4 text-green-600" />;
-      case 'word':
-      case 'docx':
-        return <FileText className="w-4 h-4 text-blue-600" />;
-      case 'powerpoint':
-      case 'pptx':
-        return <FileText className="w-4 h-4 text-orange-600" />;
-      case 'image':
-      case 'jpg':
-      case 'png':
-        return <Image className="w-4 h-4 text-purple-600" />;
-      default:
-        return <File className="w-4 h-4 text-gray-600" />;
-    }
-  };
-
   const handleConsultWorkflow = (doc: Document) => {
     setSelectedDocumentForConsult(doc);
     setWorkflowSelectorOpen(true);
@@ -624,53 +516,6 @@ export function DocumentListTab() {
   const filteredWorkflows = availableWorkflows.filter(workflow =>
     workflow.toLowerCase().includes(workflowSearchTerm.toLowerCase())
   );
-
-  const handleOpenReprovar = (doc: Document) => {
-    setSelectedDocForReprovar(doc);
-    setReprovarJustificativa('');
-    setReprovarEtapa('');
-    setReprovarAtribuir('');
-    setReprovarUserSearch('');
-    setIsReprovarModalOpen(true);
-  };
-
-  const handleConfirmReprovar = () => {
-    if (!reprovarJustificativa.trim()) {
-      toast.error('Por favor, forneça uma justificativa para a reprovação.');
-      return;
-    }
-    if (!reprovarEtapa) {
-      toast.error('Por favor, selecione a etapa de retorno.');
-      return;
-    }
-    toast.error(`Documento reprovado. Retornando para: ${reprovarEtapa}`);
-    setIsReprovarModalOpen(false);
-    setSelectedDocForReprovar(null);
-    setReprovarJustificativa('');
-    setReprovarEtapa('');
-    setReprovarAtribuir('');
-    setReprovarUserSearch('');
-  };
-
-  const handleOpenAtribuir = (doc: Document) => {
-    setSelectedDocForAtribuir(doc);
-    setSelectedResponsavel('');
-    setAtribuirUserSearch('');
-    setIsAtribuirModalOpen(true);
-  };
-
-  const handleConfirmAtribuir = () => {
-    if (!selectedResponsavel) {
-      toast.error('Por favor, selecione um responsável.');
-      return;
-    }
-    const userName = REPROVAR_USERS.find(u => u.value === selectedResponsavel)?.name ?? selectedResponsavel;
-    toast.success(`Documento atribuído para: ${userName}`);
-    setIsAtribuirModalOpen(false);
-    setSelectedDocForAtribuir(null);
-    setSelectedResponsavel('');
-    setAtribuirUserSearch('');
-  };
 
   return (
     <div className="space-y-4">
@@ -704,23 +549,6 @@ export function DocumentListTab() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Button
-                    size="sm"
-                    onClick={() => { setBulkSelectedResponsavel(''); setBulkAtribuirUserSearch(''); setIsBulkAtribuirModalOpen(true); }}
-                    className="h-8 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium gap-1.5"
-                  >
-                    <UserCheck className="w-3.5 h-3.5" />
-                    Atribuir
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => { setBulkReprovarJustificativa(''); setIsBulkReprovarModalOpen(true); }}
-                    className="h-8 bg-red-600 hover:bg-red-700 text-white text-xs font-medium gap-1.5"
-                  >
-                    <CircleX className="w-3.5 h-3.5" />
-                    Reprovar
-                  </Button>
-                  <div className="w-px h-5 bg-woopi-ai-border mx-1 hidden sm:block" />
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
@@ -969,51 +797,52 @@ export function DocumentListTab() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleOpenAtribuir(doc)}
-                                  className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20"
-                                >
-                                  <UserCheck className="w-4 h-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Atribuir</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleOpenReprovar(doc)}
-                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
-                                >
-                                  <CircleX className="w-4 h-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Reprovar</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
                                   onClick={() => handleConsultWorkflow(doc)}
                                   className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20"
                                 >
-                                  <Search className="w-4 h-4" />
+                                  <Eye className="w-4 h-4" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Consultar</p>
+                                <p>Acessar</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
+                          <AlertDialog>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Excluir</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja excluir o documento "{doc.name}"?
+                                  Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(doc.id)} className="bg-red-600 hover:bg-red-700">
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1194,466 +1023,6 @@ export function DocumentListTab() {
         </DialogContent>
       </Dialog>
 
-      {/* Reprovar Modal */}
-      <Dialog open={isReprovarModalOpen} onOpenChange={(open) => {
-        setIsReprovarModalOpen(open);
-        if (!open) { setReprovarJustificativa(''); setReprovarEtapa(''); setSelectedDocForReprovar(null); }
-      }}>
-        <DialogContent className="sm:max-w-lg dark:bg-[#292f4c] dark:border-[#393e5c]">
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex-shrink-0">
-                <CircleX className="w-5 h-5 text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <DialogTitle className="text-left text-lg font-bold dark:text-[#d5d8e0]">
-                  Reprovar Documento
-                </DialogTitle>
-                <DialogDescription className="text-left dark:text-[#9196b0]">
-                  Forneça uma justificativa e selecione para qual etapa o documento deve retornar.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="reprovar-justificativa-list" className="text-sm font-medium dark:text-[#d5d8e0]">
-                Justificativa <span className="text-red-500">*</span>
-              </Label>
-              <Textarea
-                id="reprovar-justificativa-list"
-                placeholder="Descreva o motivo da reprovação..."
-                value={reprovarJustificativa}
-                onChange={(e) => setReprovarJustificativa(e.target.value)}
-                rows={4}
-                className="resize-none dark:bg-[#1f2132] dark:border-[#393e5c] dark:text-[#d5d8e0] dark:placeholder-[#6b7280]"
-              />
-            </div>
-
-            {/* Atribuir a */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium dark:text-[#d5d8e0]">
-                Atribuir a{' '}
-                <span className="text-xs font-normal text-gray-400 dark:text-gray-500">opcional</span>
-              </Label>
-              <div className="border border-gray-200 dark:border-[#393e5c] rounded-lg overflow-hidden bg-white dark:bg-[#1f2132]">
-                <div className="relative border-b border-gray-100 dark:border-[#393e5c]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={reprovarUserSearch}
-                    onChange={(e) => setReprovarUserSearch(e.target.value)}
-                    placeholder="Buscar usuário..."
-                    className="w-full h-8 pl-9 pr-3 text-xs bg-gray-50 dark:bg-[#1a1b2e] text-gray-800 dark:text-[#d5d8e0] placeholder-gray-400 dark:placeholder-[#6b7280] focus:outline-none"
-                  />
-                </div>
-                <div className="max-h-36 overflow-y-auto dark:bg-[#1a1b2e]">
-                  {REPROVAR_USERS.filter(u => u.name.toLowerCase().includes(reprovarUserSearch.toLowerCase())).map(user => {
-                    const isSelected = reprovarAtribuir === user.value;
-                    return (
-                      <button
-                        key={user.value}
-                        type="button"
-                        onClick={() => setReprovarAtribuir(isSelected ? '' : user.value)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-[#2d3354]'}`}
-                      >
-                        <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${user.color}`}>
-                          {user.initials}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-medium truncate ${isSelected ? 'text-[#0073ea] dark:text-[#4a9ff5]' : 'text-gray-800 dark:text-[#d5d8e0]'}`}>{user.name}</p>
-                          <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate">{user.role}</p>
-                        </div>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-[#0073ea] dark:text-[#4a9ff5] flex-shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              {reprovarAtribuir && (
-                <div className="flex items-center gap-1.5 pt-0.5">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Atribuído a:</span>
-                  <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-500/30 rounded-full px-2 py-0.5">
-                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">{REPROVAR_USERS.find(u => u.value === reprovarAtribuir)?.name}</span>
-                    <button type="button" onClick={() => setReprovarAtribuir('')} className="text-blue-400 hover:text-blue-600 ml-0.5">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium dark:text-[#d5d8e0]">
-                Retornar para a etapa
-              </Label>
-              <Select value={reprovarEtapa} onValueChange={setReprovarEtapa}>
-                <SelectTrigger className="dark:bg-[#1f2132] dark:border-[#393e5c] dark:text-[#d5d8e0]">
-                  <SelectValue placeholder="Selecione a etapa..." />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-[#292f4c] dark:border-[#393e5c]">
-                  <SelectItem value="Recebimento">Recebimento</SelectItem>
-                  <SelectItem value="Análise">Análise</SelectItem>
-                  <SelectItem value="Revisão">Revisão</SelectItem>
-                  <SelectItem value="Validação Fiscal">Validação Fiscal</SelectItem>
-                  <SelectItem value="Aprovação Gerencial">Aprovação Gerencial</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <Button
-              variant="outline"
-              onClick={() => { setIsReprovarModalOpen(false); setReprovarJustificativa(''); setReprovarEtapa(''); setReprovarAtribuir(''); setReprovarUserSearch(''); setSelectedDocForReprovar(null); }}
-              className="dark:border-[#393e5c] dark:text-[#d5d8e0] dark:hover:bg-[#2d3354]"
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleConfirmReprovar}
-              className="bg-red-600 hover:bg-red-700 text-white border-0"
-            >
-              Confirmar Reprovação
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Bulk Atribuir Modal */}
-      <Dialog open={isBulkAtribuirModalOpen} onOpenChange={(open) => {
-        setIsBulkAtribuirModalOpen(open);
-        if (!open) { setBulkSelectedResponsavel(''); setBulkAtribuirUserSearch(''); }
-      }}>
-        <DialogContent className="sm:max-w-lg dark:bg-[#292f4c] dark:border-[#393e5c]">
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex-shrink-0">
-                <UserCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <DialogTitle className="text-left text-lg font-bold dark:text-[#d5d8e0]">
-                  Atribuir Responsável
-                </DialogTitle>
-                <DialogDescription className="text-left dark:text-[#9196b0]">
-                  Selecione o usuário responsável por todos os {selectedDocuments.length} documento(s) selecionado(s).
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium dark:text-[#d5d8e0]">
-                Responsável <span className="text-red-500">*</span>
-              </Label>
-              <div className="border border-gray-200 dark:border-[#393e5c] rounded-lg overflow-hidden bg-white dark:bg-[#1f2132]">
-                <div className="relative border-b border-gray-100 dark:border-[#393e5c]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={bulkAtribuirUserSearch}
-                    onChange={(e) => setBulkAtribuirUserSearch(e.target.value)}
-                    placeholder="Buscar usuário..."
-                    className="w-full h-8 pl-9 pr-3 text-xs bg-gray-50 dark:bg-[#1a1b2e] text-gray-800 dark:text-[#d5d8e0] placeholder-gray-400 dark:placeholder-[#6b7280] focus:outline-none"
-                  />
-                </div>
-                <div className="max-h-36 overflow-y-auto dark:bg-[#1a1b2e]">
-                  {REPROVAR_USERS.filter(u => u.name.toLowerCase().includes(bulkAtribuirUserSearch.toLowerCase())).map(user => {
-                    const isSelected = bulkSelectedResponsavel === user.value;
-                    return (
-                      <button
-                        key={user.value}
-                        type="button"
-                        onClick={() => setBulkSelectedResponsavel(isSelected ? '' : user.value)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-[#2d3354]'}`}
-                      >
-                        <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${user.color}`}>
-                          {user.initials}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-medium truncate ${isSelected ? 'text-[#0073ea] dark:text-[#4a9ff5]' : 'text-gray-800 dark:text-[#d5d8e0]'}`}>{user.name}</p>
-                          <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate">{user.role}</p>
-                        </div>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-[#0073ea] dark:text-[#4a9ff5] flex-shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              {bulkSelectedResponsavel && (
-                <div className="flex items-center gap-1.5 pt-0.5">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Atribuído a:</span>
-                  <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-500/30 rounded-full px-2 py-0.5">
-                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">{REPROVAR_USERS.find(u => u.value === bulkSelectedResponsavel)?.name}</span>
-                    <button type="button" onClick={() => setBulkSelectedResponsavel('')} className="text-blue-400 hover:text-blue-600 ml-0.5">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3">
-              <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">Documentos afetados</p>
-              <p className="text-sm text-blue-900 dark:text-blue-100 mt-0.5">
-                {selectedDocuments.length} documento(s) serão atribuídos ao responsável selecionado.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <Button
-              variant="outline"
-              onClick={() => { setIsBulkAtribuirModalOpen(false); setBulkSelectedResponsavel(''); setBulkAtribuirUserSearch(''); }}
-              className="dark:border-[#393e5c] dark:text-[#d5d8e0] dark:hover:bg-[#2d3354]"
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleConfirmBulkAtribuir}
-              className="bg-blue-600 hover:bg-blue-700 text-white border-0"
-            >
-              Confirmar Atribuição
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Bulk Reprovar Modal */}
-      <Dialog open={isBulkReprovarModalOpen} onOpenChange={(open) => {
-        setIsBulkReprovarModalOpen(open);
-        if (!open) { setBulkReprovarJustificativa(''); setBulkReprovarEtapa(''); setBulkReprovarAtribuir(''); setBulkReprovarUserSearch(''); }
-      }}>
-        <DialogContent className="sm:max-w-lg dark:bg-[#292f4c] dark:border-[#393e5c]">
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex-shrink-0">
-                <CircleX className="w-5 h-5 text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <DialogTitle className="text-left text-lg font-bold dark:text-[#d5d8e0]">
-                  Reprovar Documentos
-                </DialogTitle>
-                <DialogDescription className="text-left dark:text-[#9196b0]">
-                  Forneça uma justificativa comum e selecione para qual etapa os documentos devem retornar.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="bulk-reprovar-justificativa" className="text-sm font-medium dark:text-[#d5d8e0]">
-                Justificativa <span className="text-red-500">*</span>
-              </Label>
-              <Textarea
-                id="bulk-reprovar-justificativa"
-                placeholder="Descreva o motivo da reprovação..."
-                value={bulkReprovarJustificativa}
-                onChange={(e) => setBulkReprovarJustificativa(e.target.value)}
-                rows={4}
-                className="resize-none dark:bg-[#1f2132] dark:border-[#393e5c] dark:text-[#d5d8e0] dark:placeholder-[#6b7280]"
-              />
-            </div>
-
-            {/* Atribuir a (Bulk) */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium dark:text-[#d5d8e0]">
-                Atribuir a{' '}
-                <span className="text-xs font-normal text-gray-400 dark:text-gray-500">opcional</span>
-              </Label>
-              <div className="border border-gray-200 dark:border-[#393e5c] rounded-lg overflow-hidden bg-white dark:bg-[#1f2132]">
-                <div className="relative border-b border-gray-100 dark:border-[#393e5c]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={bulkReprovarUserSearch}
-                    onChange={(e) => setBulkReprovarUserSearch(e.target.value)}
-                    placeholder="Buscar usuário..."
-                    className="w-full h-8 pl-9 pr-3 text-xs bg-gray-50 dark:bg-[#1a1b2e] text-gray-800 dark:text-[#d5d8e0] placeholder-gray-400 dark:placeholder-[#6b7280] focus:outline-none"
-                  />
-                </div>
-                <div className="max-h-36 overflow-y-auto dark:bg-[#1a1b2e]">
-                  {REPROVAR_USERS.filter(u => u.name.toLowerCase().includes(bulkReprovarUserSearch.toLowerCase())).map(user => {
-                    const isSelected = bulkReprovarAtribuir === user.value;
-                    return (
-                      <button
-                        key={user.value}
-                        type="button"
-                        onClick={() => setBulkReprovarAtribuir(isSelected ? '' : user.value)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-[#2d3354]'}`}
-                      >
-                        <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${user.color}`}>
-                          {user.initials}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-medium truncate ${isSelected ? 'text-[#0073ea] dark:text-[#4a9ff5]' : 'text-gray-800 dark:text-[#d5d8e0]'}`}>{user.name}</p>
-                          <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate">{user.role}</p>
-                        </div>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-[#0073ea] dark:text-[#4a9ff5] flex-shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              {bulkReprovarAtribuir && (
-                <div className="flex items-center gap-1.5 pt-0.5">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Atribuído a:</span>
-                  <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-500/30 rounded-full px-2 py-0.5">
-                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">{REPROVAR_USERS.find(u => u.value === bulkReprovarAtribuir)?.name}</span>
-                    <button type="button" onClick={() => setBulkReprovarAtribuir('')} className="text-blue-400 hover:text-blue-600 ml-0.5">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium dark:text-[#d5d8e0]">
-                Retornar para a etapa
-              </Label>
-              <Select value={bulkReprovarEtapa} onValueChange={setBulkReprovarEtapa}>
-                <SelectTrigger className="dark:bg-[#1f2132] dark:border-[#393e5c] dark:text-[#d5d8e0]">
-                  <SelectValue placeholder="Selecione a etapa..." />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-[#292f4c] dark:border-[#393e5c]">
-                  <SelectItem value="Recebimento">Recebimento</SelectItem>
-                  <SelectItem value="Análise">Análise</SelectItem>
-                  <SelectItem value="Revisão">Revisão</SelectItem>
-                  <SelectItem value="Validação Fiscal">Validação Fiscal</SelectItem>
-                  <SelectItem value="Aprovação Gerencial">Aprovação Gerencial</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
-              <p className="text-xs text-red-700 dark:text-red-300 font-medium">Documentos afetados</p>
-              <p className="text-sm text-red-900 dark:text-red-100 mt-0.5">
-                {selectedDocuments.length} documento(s) serão reprovados.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <Button
-              variant="outline"
-              onClick={() => { setIsBulkReprovarModalOpen(false); setBulkReprovarJustificativa(''); setBulkReprovarEtapa(''); setBulkReprovarAtribuir(''); setBulkReprovarUserSearch(''); }}
-              className="dark:border-[#393e5c] dark:text-[#d5d8e0] dark:hover:bg-[#2d3354]"
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleConfirmBulkReprovar}
-              className="bg-red-600 hover:bg-red-700 text-white border-0"
-            >
-              Confirmar Reprovação
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Atribuir Modal */}
-      <Dialog open={isAtribuirModalOpen} onOpenChange={(open) => {
-        setIsAtribuirModalOpen(open);
-        if (!open) { setSelectedResponsavel(''); setAtribuirUserSearch(''); setSelectedDocForAtribuir(null); }
-      }}>
-        <DialogContent className="sm:max-w-lg dark:bg-[#292f4c] dark:border-[#393e5c]">
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex-shrink-0">
-                <UserCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <DialogTitle className="text-left text-lg font-bold dark:text-[#d5d8e0]">
-                  Atribuir Responsável
-                </DialogTitle>
-                <DialogDescription className="text-left dark:text-[#9196b0]">
-                  Selecione o usuário que será responsável por este documento.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium dark:text-[#d5d8e0]">
-                Responsável <span className="text-red-500">*</span>
-              </Label>
-              <div className="border border-gray-200 dark:border-[#393e5c] rounded-lg overflow-hidden bg-white dark:bg-[#1f2132]">
-                <div className="relative border-b border-gray-100 dark:border-[#393e5c]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={atribuirUserSearch}
-                    onChange={(e) => setAtribuirUserSearch(e.target.value)}
-                    placeholder="Buscar usuário..."
-                    className="w-full h-8 pl-9 pr-3 text-xs bg-gray-50 dark:bg-[#1a1b2e] text-gray-800 dark:text-[#d5d8e0] placeholder-gray-400 dark:placeholder-[#6b7280] focus:outline-none"
-                  />
-                </div>
-                <div className="max-h-36 overflow-y-auto dark:bg-[#1a1b2e]">
-                  {REPROVAR_USERS.filter(u => u.name.toLowerCase().includes(atribuirUserSearch.toLowerCase())).map(user => {
-                    const isSelected = selectedResponsavel === user.value;
-                    return (
-                      <button
-                        key={user.value}
-                        type="button"
-                        onClick={() => setSelectedResponsavel(isSelected ? '' : user.value)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-[#2d3354]'}`}
-                      >
-                        <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${user.color}`}>
-                          {user.initials}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-medium truncate ${isSelected ? 'text-[#0073ea] dark:text-[#4a9ff5]' : 'text-gray-800 dark:text-[#d5d8e0]'}`}>{user.name}</p>
-                          <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate">{user.role}</p>
-                        </div>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-[#0073ea] dark:text-[#4a9ff5] flex-shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              {selectedResponsavel && (
-                <div className="flex items-center gap-1.5 pt-0.5">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Atribuído a:</span>
-                  <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-500/30 rounded-full px-2 py-0.5">
-                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">{REPROVAR_USERS.find(u => u.value === selectedResponsavel)?.name}</span>
-                    <button type="button" onClick={() => setSelectedResponsavel('')} className="text-blue-400 hover:text-blue-600 ml-0.5">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {selectedDocForAtribuir && (
-              <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3">
-                <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">Documento selecionado</p>
-                <p className="text-sm text-blue-900 dark:text-blue-100 mt-0.5 truncate">{selectedDocForAtribuir.name}</p>
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <Button
-              variant="outline"
-              onClick={() => { setIsAtribuirModalOpen(false); setSelectedResponsavel(''); setAtribuirUserSearch(''); setSelectedDocForAtribuir(null); }}
-              className="dark:border-[#393e5c] dark:text-[#d5d8e0] dark:hover:bg-[#2d3354]"
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleConfirmAtribuir}
-              className="bg-blue-600 hover:bg-blue-700 text-white border-0"
-            >
-              Confirmar Atribuição
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
