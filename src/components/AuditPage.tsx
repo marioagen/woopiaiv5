@@ -23,7 +23,9 @@ import {
   ChevronRight,
   Layers,
   ArrowUpDown,
-  ChevronDown
+  ChevronDown,
+  Wrench,
+  Settings2
 } from 'lucide-react';
 import { Separator } from './ui/separator';
 
@@ -170,6 +172,34 @@ const allDocumentsHistory: Record<string, DocumentData> = {
       }
     ]
   },
+  'AUDIT-01': {
+    name: 'Relatório de Auditoria Interna #2024',
+    workflows: [{
+      workflow: 'Análise Jurídica de Contratos',
+      workflowStage: 'Aprovado',
+      history: [
+        { id: '1', user: 'Dra. Mariana Costa', action: 'Upload', timestamp: '2024-02-13 08:00:00', details: 'Documento carregado no sistema para análise interna', stage: 'Protocolo' },
+        { id: '2', user: 'Dra. Mariana Costa', action: 'Atribuir', timestamp: '2024-02-13 08:10:00', details: 'Documento atribuído para Dr. Paulo Santos', stage: 'Protocolo' },
+        { id: '3', user: 'Ana Costa', action: 'Reprovar', timestamp: '2024-02-13 10:00:00', details: 'Documento reprovado: "Valores divergentes com relatório anterior"', stage: 'Análise Jurídica' },
+        { id: '4', user: 'Dra. Mariana Costa', action: 'Reprovar', timestamp: '2024-02-13 11:30:00', details: 'Documento reprovado: "Assinatura do responsável ausente"', stage: 'Análise Jurídica' },
+        { id: '5', user: 'Ana Costa', action: 'Deletar', timestamp: '2024-02-13 14:00:00', details: 'Documento deletado: "Versão desatualizada substituída por revisão"', stage: 'Protocolo' },
+        { id: '6', user: 'Dra. Mariana Costa', action: 'Deletar', timestamp: '2024-02-13 14:30:00', details: 'Documento deletado: "Duplicata identificada"', stage: 'Protocolo' },
+      ]
+    }]
+  },
+  'AUDIT-02': {
+    name: 'Declaração de Conformidade #77',
+    workflows: [{
+      workflow: 'Processamento de Notas Fiscais',
+      workflowStage: 'Pagos e Conciliados',
+      history: [
+        { id: '1', user: 'Dra. Mariana Costa', action: 'Upload', timestamp: '2024-02-14 09:00:00', details: 'Declaração de conformidade carregada para validação financeira', stage: 'Recebimento' },
+        { id: '2', user: 'Dra. Mariana Costa', action: 'Atribuir', timestamp: '2024-02-14 09:15:00', details: 'Documento atribuído para Ana Costa', stage: 'Recebimento' },
+        { id: '3', user: 'Ana Costa', action: 'Finalizar', timestamp: '2024-02-14 16:00:00', details: 'Declaração finalizada após conferência de valores e assinaturas', stage: 'Pagos e Conciliados' },
+        { id: '4', user: 'Dra. Mariana Costa', action: 'Finalizar', timestamp: '2024-02-14 16:45:00', details: 'Processo encerrado com parecer jurídico favorável', stage: 'Pagos e Conciliados' },
+      ]
+    }]
+  },
   'JUR002': {
     name: 'Aditivo Contratual #45',
     workflows: [
@@ -241,6 +271,50 @@ const workflowsAuditData: WorkflowAuditData[] = [
 ];
 
 // ============================================================
+// MOCK DATA - Ações de sistema (ferramentas e esteiras)
+// ============================================================
+interface SystemAuditEntry {
+  id: string;
+  user: string;
+  action: string;
+  timestamp: string;
+  details: string;
+  resourceType: 'ferramenta' | 'esteira';
+  resourceName: string;
+}
+
+const systemAuditEntries: SystemAuditEntry[] = [
+  { id: 'sys-001', user: 'João Silva', action: 'Criar ferramenta', timestamp: '2024-02-12 16:30:00', details: 'Criou a ferramenta "Extrator de CNPJ"', resourceType: 'ferramenta', resourceName: 'Extrator de CNPJ' },
+  { id: 'sys-002', user: 'João Silva', action: 'Editar ferramenta', timestamp: '2024-02-12 17:15:00', details: 'Editou a ferramenta "Extrator de CNPJ" — alterou prompt de instrução', resourceType: 'ferramenta', resourceName: 'Extrator de CNPJ' },
+  { id: 'sys-003', user: 'Ana Costa', action: 'Criar ferramenta', timestamp: '2024-02-11 10:00:00', details: 'Criou a ferramenta "Classificador de Documentos"', resourceType: 'ferramenta', resourceName: 'Classificador de Documentos' },
+  { id: 'sys-004', user: 'Ana Costa', action: 'Editar ferramenta', timestamp: '2024-02-11 14:20:00', details: 'Editou a ferramenta "Classificador de Documentos" — adicionou novo tipo de documento', resourceType: 'ferramenta', resourceName: 'Classificador de Documentos' },
+  { id: 'sys-005', user: 'Carlos Silva', action: 'Excluir ferramenta', timestamp: '2024-02-10 11:45:00', details: 'Excluiu a ferramenta "Validador de CPF v1" — substituída por versão atualizada', resourceType: 'ferramenta', resourceName: 'Validador de CPF v1' },
+  { id: 'sys-006', user: 'Pedro Oliveira', action: 'Criar ferramenta', timestamp: '2024-02-09 09:30:00', details: 'Criou a ferramenta "Resumo Automático de Contratos"', resourceType: 'ferramenta', resourceName: 'Resumo Automático de Contratos' },
+  { id: 'sys-007', user: 'Maria Santos', action: 'Editar ferramenta', timestamp: '2024-02-08 16:00:00', details: 'Editou a ferramenta "Resumo Automático de Contratos" — ajustou parâmetros de temperatura', resourceType: 'ferramenta', resourceName: 'Resumo Automático de Contratos' },
+  { id: 'sys-008', user: 'Fernanda Alves', action: 'Criar ferramenta', timestamp: '2024-02-07 08:45:00', details: 'Criou a ferramenta "Extrator de Dados RH"', resourceType: 'ferramenta', resourceName: 'Extrator de Dados RH' },
+  { id: 'sys-009', user: 'Roberto Lima', action: 'Excluir ferramenta', timestamp: '2024-02-06 15:30:00', details: 'Excluiu a ferramenta "Parser de XML Legado" — funcionalidade descontinuada', resourceType: 'ferramenta', resourceName: 'Parser de XML Legado' },
+  { id: 'sys-010', user: 'João Silva', action: 'Criar esteira', timestamp: '2024-02-12 08:00:00', details: 'Criou a esteira "Onboarding de Fornecedores" com 5 etapas', resourceType: 'esteira', resourceName: 'Onboarding de Fornecedores' },
+  { id: 'sys-011', user: 'João Silva', action: 'Editar esteira', timestamp: '2024-02-12 10:30:00', details: 'Editou a esteira "Onboarding de Fornecedores" — adicionou etapa "Validação Fiscal"', resourceType: 'esteira', resourceName: 'Onboarding de Fornecedores' },
+  { id: 'sys-012', user: 'Ana Costa', action: 'Editar esteira', timestamp: '2024-02-11 11:00:00', details: 'Editou a esteira "Processamento de Notas Fiscais" — renomeou etapa "Conferência" para "Verificação Financeira"', resourceType: 'esteira', resourceName: 'Processamento de Notas Fiscais' },
+  { id: 'sys-013', user: 'Dra. Mariana Costa', action: 'Criar esteira', timestamp: '2024-02-10 08:30:00', details: 'Criou a esteira "Revisão de Contratos Internacionais" com 4 etapas', resourceType: 'esteira', resourceName: 'Revisão de Contratos Internacionais' },
+  { id: 'sys-014', user: 'Fernanda Alves', action: 'Editar esteira', timestamp: '2024-02-09 14:00:00', details: 'Editou a esteira "Gestão de Documentos RH" — reordenou etapas de aprovação', resourceType: 'esteira', resourceName: 'Gestão de Documentos RH' },
+  { id: 'sys-015', user: 'Ricardo Torres', action: 'Excluir esteira', timestamp: '2024-02-08 17:00:00', details: 'Excluiu a esteira "Fluxo Temporário de Auditoria" — processo finalizado', resourceType: 'esteira', resourceName: 'Fluxo Temporário de Auditoria' },
+  { id: 'sys-016', user: 'Carlos Mendes', action: 'Criar esteira', timestamp: '2024-02-07 10:00:00', details: 'Criou a esteira "Admissão de Colaboradores" com 6 etapas', resourceType: 'esteira', resourceName: 'Admissão de Colaboradores' },
+  { id: 'sys-017', user: 'Pedro Oliveira', action: 'Editar esteira', timestamp: '2024-02-06 16:45:00', details: 'Editou a esteira "Processamento de Notas Fiscais" — adicionou campo obrigatório na etapa de Recebimento', resourceType: 'esteira', resourceName: 'Processamento de Notas Fiscais' },
+  { id: 'sys-018', user: 'Luciana Melo', action: 'Criar ferramenta', timestamp: '2024-02-05 09:15:00', details: 'Criou a ferramenta "Validador de Atestados Médicos"', resourceType: 'ferramenta', resourceName: 'Validador de Atestados Médicos' },
+  { id: 'sys-019', user: 'Dr. Paulo Santos', action: 'Editar esteira', timestamp: '2024-02-04 14:30:00', details: 'Editou a esteira "Análise Jurídica de Contratos" — adicionou etapa "Parecer Técnico"', resourceType: 'esteira', resourceName: 'Análise Jurídica de Contratos' },
+  { id: 'sys-020', user: 'João Ferreira', action: 'Excluir ferramenta', timestamp: '2024-02-03 11:00:00', details: 'Excluiu a ferramenta "Gerador de Minutas v2" — migrada para nova versão', resourceType: 'ferramenta', resourceName: 'Gerador de Minutas v2' },
+  { id: 'sys-021', user: 'Ana Costa', action: 'Excluir ferramenta', timestamp: '2024-02-14 10:00:00', details: 'Excluiu a ferramenta "Extrator de Dados Legado" — substituída pela versão 3.0', resourceType: 'ferramenta', resourceName: 'Extrator de Dados Legado' },
+  { id: 'sys-022', user: 'Ana Costa', action: 'Criar esteira', timestamp: '2024-02-14 11:00:00', details: 'Criou a esteira "Conciliação Bancária Automática" com 4 etapas', resourceType: 'esteira', resourceName: 'Conciliação Bancária Automática' },
+  { id: 'sys-023', user: 'Ana Costa', action: 'Excluir esteira', timestamp: '2024-02-14 17:30:00', details: 'Excluiu a esteira "Fluxo de Testes Financeiros" — processo piloto encerrado', resourceType: 'esteira', resourceName: 'Fluxo de Testes Financeiros' },
+  { id: 'sys-024', user: 'Dra. Mariana Costa', action: 'Criar ferramenta', timestamp: '2024-02-15 09:00:00', details: 'Criou a ferramenta "Analisador de Risco Contratual"', resourceType: 'ferramenta', resourceName: 'Analisador de Risco Contratual' },
+  { id: 'sys-025', user: 'Dra. Mariana Costa', action: 'Editar ferramenta', timestamp: '2024-02-15 10:30:00', details: 'Editou a ferramenta "Analisador de Risco Contratual" — adicionou cláusulas de rescisão ao modelo', resourceType: 'ferramenta', resourceName: 'Analisador de Risco Contratual' },
+  { id: 'sys-026', user: 'Dra. Mariana Costa', action: 'Excluir ferramenta', timestamp: '2024-02-15 14:00:00', details: 'Excluiu a ferramenta "Parser de Contratos v1" — descontinuada após migração', resourceType: 'ferramenta', resourceName: 'Parser de Contratos v1' },
+  { id: 'sys-027', user: 'Dra. Mariana Costa', action: 'Editar esteira', timestamp: '2024-02-15 15:30:00', details: 'Editou a esteira "Análise Jurídica de Contratos" — inseriu etapa de revisão obrigatória', resourceType: 'esteira', resourceName: 'Análise Jurídica de Contratos' },
+  { id: 'sys-028', user: 'Dra. Mariana Costa', action: 'Excluir esteira', timestamp: '2024-02-15 17:00:00', details: 'Excluiu a esteira "Análise Jurídica Simplificada" — processo descontinuado por mudança regulatória', resourceType: 'esteira', resourceName: 'Análise Jurídica Simplificada' },
+];
+
+// ============================================================
 // HELPER - Shared action badge styles
 // ============================================================
 const getActionBadgeClass = (action: string) => {
@@ -253,6 +327,12 @@ const getActionBadgeClass = (action: string) => {
     case 'Finalizar': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300';
     case 'Deletar': return 'bg-gray-100 text-gray-700 dark:bg-gray-700/40 dark:text-gray-300';
     case 'Perguntar ao documento': return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300';
+    case 'Criar ferramenta': return 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300';
+    case 'Editar ferramenta': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300';
+    case 'Excluir ferramenta': return 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300';
+    case 'Criar esteira': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300';
+    case 'Editar esteira': return 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300';
+    case 'Excluir esteira': return 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300';
     default: return 'bg-gray-100 text-gray-700 dark:bg-gray-700/40 dark:text-gray-300';
   }
 };
@@ -1102,7 +1182,7 @@ function UsersAuditTab() {
   const [eventSortOrder, setEventSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [eventSearch, setEventSearch] = useState('');
 
-  // Aggregate user data from all documents
+  // Aggregate user data from all documents + system actions
   const usersData = useMemo(() => {
     const userMap: Record<string, {
       name: string;
@@ -1116,24 +1196,30 @@ function UsersAuditTab() {
         docName: string;
         workflow: string;
         stage?: string;
+        resourceType?: 'ferramenta' | 'esteira';
+        resourceName?: string;
       }[];
       workflows: Set<string>;
       actionCounts: Record<string, number>;
     }> = {};
 
+    const ensureUser = (name: string) => {
+      if (!userMap[name]) {
+        userMap[name] = {
+          name,
+          teams: userTeamsMap[name] || ['Sem time'],
+          events: [],
+          workflows: new Set(),
+          actionCounts: {}
+        };
+      }
+      return userMap[name];
+    };
+
     Object.entries(allDocumentsHistory).forEach(([docId, doc]) => {
       doc.workflows.forEach(wfAssoc => {
         wfAssoc.history.forEach(entry => {
-          if (!userMap[entry.user]) {
-            userMap[entry.user] = {
-              name: entry.user,
-              teams: userTeamsMap[entry.user] || ['Sem time'],
-              events: [],
-              workflows: new Set(),
-              actionCounts: {}
-            };
-          }
-          const u = userMap[entry.user];
+          const u = ensureUser(entry.user);
           u.events.push({
             id: `${docId}-${wfAssoc.workflow}-${entry.id}`,
             action: entry.action,
@@ -1150,7 +1236,22 @@ function UsersAuditTab() {
       });
     });
 
-    // Sort events by timestamp desc for each user
+    systemAuditEntries.forEach(entry => {
+      const u = ensureUser(entry.user);
+      u.events.push({
+        id: entry.id,
+        action: entry.action,
+        timestamp: entry.timestamp,
+        details: entry.details,
+        docId: '',
+        docName: entry.resourceName,
+        workflow: entry.resourceType === 'ferramenta' ? 'Ferramentas' : 'Esteiras',
+        resourceType: entry.resourceType,
+        resourceName: entry.resourceName
+      });
+      u.actionCounts[entry.action] = (u.actionCounts[entry.action] || 0) + 1;
+    });
+
     Object.values(userMap).forEach(u => {
       u.events.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
     });
@@ -1401,43 +1502,62 @@ function UsersAuditTab() {
               <CardContent className="flex-1 flex flex-col">
                 <div className="space-y-2.5 flex-1 pr-2">
                   {filteredEvents.length > 0 ? (
-                    filteredEvents.map((event) => (
-                      <div
-                        key={event.id}
-                        className="p-3 border border-woopi-ai-border rounded-lg bg-white dark:bg-[#292f4c] hover:shadow-sm transition-shadow"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="w-7 h-7 rounded-full bg-woopi-ai-blue/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <FileText className="w-3.5 h-3.5 text-woopi-ai-blue" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                              <span className="font-medium text-sm text-[#0073ea]">{event.docName}</span>
-                              <Badge className={`${getActionBadgeClass(event.action)} text-[10px] px-1.5 py-0`}>
-                                {event.action}
-                              </Badge>
+                    filteredEvents.map((event) => {
+                      const isSystem = !!event.resourceType;
+                      const IconComp = isSystem
+                        ? (event.resourceType === 'ferramenta' ? Wrench : Settings2)
+                        : FileText;
+                      const iconColor = isSystem
+                        ? (event.resourceType === 'ferramenta' ? 'text-teal-600 dark:text-teal-400' : 'text-indigo-600 dark:text-indigo-400')
+                        : 'text-woopi-ai-blue';
+                      const iconBg = isSystem
+                        ? (event.resourceType === 'ferramenta' ? 'bg-teal-100 dark:bg-teal-900/30' : 'bg-indigo-100 dark:bg-indigo-900/30')
+                        : 'bg-woopi-ai-blue/10';
+                      return (
+                        <div
+                          key={event.id}
+                          className="p-3 border border-woopi-ai-border rounded-lg bg-white dark:bg-[#292f4c] hover:shadow-sm transition-shadow"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`w-7 h-7 rounded-full ${iconBg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                              <IconComp className={`w-3.5 h-3.5 ${iconColor}`} />
                             </div>
-                            <p className="text-xs text-woopi-ai-gray mb-1 truncate">{event.details}</p>
-                            <div className="flex items-center gap-3 text-[10px] text-woopi-ai-gray">
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {event.timestamp}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Workflow className="w-3 h-3" />
-                                {event.workflow}
-                              </span>
-                              {event.stage && (
-                                <div className="contents">
-                                  <span className="text-gray-300 dark:text-[#7a7f9d]">&middot;</span>
-                                  <span>{event.stage}</span>
-                                </div>
-                              )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <span className="font-medium text-sm text-[#0073ea]">{event.docName}</span>
+                                <Badge className={`${getActionBadgeClass(event.action)} text-[10px] px-1.5 py-0`}>
+                                  {event.action}
+                                </Badge>
+                                {isSystem && (
+                                  <Badge className="bg-gray-100 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400 text-[10px] px-1.5 py-0 font-normal">
+                                    {event.resourceType === 'ferramenta' ? 'Ferramenta' : 'Esteira'}
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-woopi-ai-gray mb-1 truncate">{event.details}</p>
+                              <div className="flex items-center gap-3 text-[10px] text-woopi-ai-gray">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {event.timestamp}
+                                </span>
+                                {!isSystem && (
+                                  <span className="flex items-center gap-1">
+                                    <Workflow className="w-3 h-3" />
+                                    {event.workflow}
+                                  </span>
+                                )}
+                                {event.stage && (
+                                  <div className="contents">
+                                    <span className="text-gray-300 dark:text-[#7a7f9d]">&middot;</span>
+                                    <span>{event.stage}</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="text-center py-8 text-woopi-ai-gray text-sm">
                       Nenhuma atividade encontrada com o filtro selecionado
