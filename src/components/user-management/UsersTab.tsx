@@ -184,6 +184,15 @@ export const UsersTab = memo<UsersTabProps>(({
                       {getSortIcon('teams', userSortField, userSortDirection)}
                     </div>
                   </TableHead>
+                  <TableHead
+                    className="text-woopi-ai-gray font-medium cursor-pointer hover:bg-muted transition-colors"
+                    onClick={() => onSort('lastLogin')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Último acesso
+                      {getSortIcon('lastLogin', userSortField, userSortDirection)}
+                    </div>
+                  </TableHead>
                   <TableHead className="text-woopi-ai-gray font-medium text-right">
                     Ações
                   </TableHead>
@@ -235,6 +244,11 @@ export const UsersTab = memo<UsersTabProps>(({
                           </Badge>
                         ))}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-woopi-ai-gray whitespace-nowrap">
+                        {user.lastLogin ?? 'N/A'}
+                      </span>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">

@@ -1328,10 +1328,10 @@ export function DocumentWorkflowPage() {
     const selectableKeys = documents.filter((d) => !d.isFinalized).map((d) => boardDocKey(stage.id, d.id));
     const allStageSelected = selectableKeys.length > 0 && selectableKeys.every((k) => selectedBoardKeys.includes(k));
     const someStageSelected = selectableKeys.some((k) => selectedBoardKeys.includes(k));
-    const isCollapsed = !!collapsedStages[stage.id];
+    const isCollapsed = collapsedStages[stage.id] !== false;
 
     const toggleCollapse = () => {
-      setCollapsedStages((prev) => ({ ...prev, [stage.id]: !prev[stage.id] }));
+      setCollapsedStages((prev) => ({ ...prev, [stage.id]: !isCollapsed }));
     };
 
     const toggleSelectAllInStageTable = () => {

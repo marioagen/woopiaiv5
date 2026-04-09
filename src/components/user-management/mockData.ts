@@ -6,7 +6,7 @@ export interface User {
   roles: string[];
   teams: string[];
   status: 'Ativo' | 'Inativo' | 'Suspenso';
-  lastLogin: string;
+  lastLogin: string | null;
   documentsCount: number;
   avatar?: string;
 }
@@ -61,7 +61,7 @@ export const mockUsers: User[] = [
     roles: ['Administrador'],
     teams: ['TI'],
     status: 'Ativo',
-    lastLogin: '2 horas atrás',
+    lastLogin: '09/04/2026 12:03',
     documentsCount: 127,
   },
   {
@@ -72,7 +72,7 @@ export const mockUsers: User[] = [
     roles: ['Gestor'],
     teams: ['Financeiro'],
     status: 'Ativo',
-    lastLogin: '1 dia atrás',
+    lastLogin: '08/04/2026 09:47',
     documentsCount: 89,
   },
   {
@@ -83,7 +83,7 @@ export const mockUsers: User[] = [
     roles: ['Analista'],
     teams: ['RH'],
     status: 'Ativo',
-    lastLogin: '3 horas atrás',
+    lastLogin: '09/04/2026 11:22',
     documentsCount: 45,
   },
   {
@@ -94,7 +94,7 @@ export const mockUsers: User[] = [
     roles: ['Gestor'],
     teams: ['Marketing'],
     status: 'Ativo',
-    lastLogin: '5 horas atrás',
+    lastLogin: '09/04/2026 09:05',
     documentsCount: 67,
   },
   {
@@ -105,7 +105,7 @@ export const mockUsers: User[] = [
     roles: ['Analista'],
     teams: ['Jurídico'],
     status: 'Ativo',
-    lastLogin: '2 dias atrás',
+    lastLogin: '07/04/2026 16:38',
     documentsCount: 34,
   },
   {
@@ -116,7 +116,7 @@ export const mockUsers: User[] = [
     roles: ['Auditor'],
     teams: ['Financeiro'],
     status: 'Ativo',
-    lastLogin: '1 hora atrás',
+    lastLogin: '09/04/2026 13:14',
     documentsCount: 98,
   },
   {
@@ -127,7 +127,7 @@ export const mockUsers: User[] = [
     roles: ['Analista'],
     teams: ['TI'],
     status: 'Ativo',
-    lastLogin: '4 horas atrás',
+    lastLogin: '09/04/2026 10:51',
     documentsCount: 56,
   },
   {
@@ -138,7 +138,7 @@ export const mockUsers: User[] = [
     roles: ['Gestor'],
     teams: ['RH'],
     status: 'Inativo',
-    lastLogin: '15 dias atrás',
+    lastLogin: '25/03/2026 08:19',
     documentsCount: 23,
   },
 ];

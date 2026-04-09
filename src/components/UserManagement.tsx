@@ -49,7 +49,7 @@ export function UserManagement() {
       role: 'Administrador',
       team: 'TI',
       status: 'Ativo',
-      lastLogin: '2 horas atrás',
+      lastLogin: '09/04/2026 12:03',
       workflowsCount: 127,
     },
     {
@@ -60,7 +60,7 @@ export function UserManagement() {
       role: 'Gestor',
       team: 'Financeiro',
       status: 'Ativo',
-      lastLogin: '1 dia atrás',
+      lastLogin: '08/04/2026 09:47',
       workflowsCount: 89,
     },
     {
@@ -71,7 +71,7 @@ export function UserManagement() {
       role: 'Analista',
       team: 'Jurídico',
       status: 'Inativo',
-      lastLogin: '1 semana atrás',
+      lastLogin: '02/04/2026 14:30',
       workflowsCount: 45,
     },
     {
@@ -82,7 +82,7 @@ export function UserManagement() {
       role: 'Revisor',
       team: 'RH',
       status: 'Ativo',
-      lastLogin: '3 horas atrás',
+      lastLogin: '09/04/2026 11:22',
       workflowsCount: 234,
     },
   ]);
@@ -158,7 +158,7 @@ export function UserManagement() {
       role: formData.role,
       team: formData.team,
       status: 'Ativo',
-      lastLogin: 'Nunca',
+      lastLogin: 'N/A',
       documentsCount: 0,
     };
     
@@ -436,7 +436,7 @@ export function UserManagement() {
                 <TableHead>Função</TableHead>
                 <TableHead>Time</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Último Login</TableHead>
+                <TableHead>Último acesso</TableHead>
                 <TableHead>Workflows</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>

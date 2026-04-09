@@ -100,7 +100,7 @@ export function UserFormPage() {
         roles: [], // User roles will be managed through team association
         teams: formData.selectedTeams,
         status: 'Ativo',
-        lastLogin: 'Nunca',
+        lastLogin: null,
         documentsCount: 0
       });
       toast.success('Usuário criado com sucesso');
