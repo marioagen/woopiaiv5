@@ -509,7 +509,11 @@ export function DocumentListTab() {
     
     setTimeout(() => {
       setWorkflowSelectorOpen(false);
-      navigate(`/documentos/${selectedDocumentForConsult?.id}/analisar?workflow=${encodeURIComponent(workflow)}`);
+      const q = new URLSearchParams({
+        workflow,
+        from: 'workflow',
+      });
+      navigate(`/documentos/${selectedDocumentForConsult?.id}/analisar?${q.toString()}`);
     }, 2000);
   };
 

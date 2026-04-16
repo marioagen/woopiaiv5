@@ -66,7 +66,8 @@ const allDocumentsHistory: Record<string, DocumentData> = {
         { id: '2', user: 'Ana Costa', action: 'Atribuir', timestamp: '2024-02-11 09:16:10', details: 'Documento atribuído para Carlos Silva', stage: 'Recebimento' },
         { id: '3', user: 'Carlos Silva', action: 'Perguntar ao documento', timestamp: '2024-02-11 10:22:45', details: 'Pergunta: "Qual o valor total da nota fiscal?"', stage: 'Recebimento' },
         { id: '4', user: 'Carlos Silva', action: 'Editar resposta', timestamp: '2024-02-11 10:35:18', details: 'Campo "Valor Total" alterado de "R$ 4.500,00" para "R$ 4.967,89"', stage: 'Recebimento' },
-        { id: '5', user: 'Pedro Oliveira', action: 'Avançar', timestamp: '2024-02-11 11:20:05', details: 'Documento avançado para "Verificação Financeira"', stage: 'Recebimento' }
+        { id: '5', user: 'Pedro Oliveira', action: 'Avançar', timestamp: '2024-02-11 11:20:05', details: 'Documento avançado para "Verificação Financeira"', stage: 'Recebimento' },
+        { id: '6', user: 'Ana Costa', action: 'Anonimizar', timestamp: '2024-02-11 11:45:30', details: 'Documento anonimizado com tipo "Mascaramento parcial" e prompt "LGPD — dados pessoais sensíveis"', stage: 'Verificação Financeira' }
       ]
     }]
   },
@@ -158,7 +159,8 @@ const allDocumentsHistory: Record<string, DocumentData> = {
           { id: '2', user: 'João Ferreira', action: 'Atribuir', timestamp: '2024-02-10 09:05:00', details: 'Documento atribuído para Dra. Mariana Costa', stage: 'Protocolo' },
           { id: '3', user: 'Dra. Mariana Costa', action: 'Avançar', timestamp: '2024-02-10 10:30:00', details: 'Documento avançado para "Análise Jurídica"', stage: 'Protocolo' },
           { id: '4', user: 'Dra. Mariana Costa', action: 'Perguntar ao documento', timestamp: '2024-02-10 14:00:00', details: 'Pergunta: "Existem cláusulas de rescisão antecipada?"', stage: 'Análise Jurídica' },
-          { id: '5', user: 'Dra. Mariana Costa', action: 'Editar resposta', timestamp: '2024-02-10 15:30:00', details: 'Campo "Cláusulas de Risco" atualizado com 3 itens', stage: 'Análise Jurídica' }
+          { id: '5', user: 'Dra. Mariana Costa', action: 'Editar resposta', timestamp: '2024-02-10 15:30:00', details: 'Campo "Cláusulas de Risco" atualizado com 3 itens', stage: 'Análise Jurídica' },
+          { id: '6', user: 'Dra. Mariana Costa', action: 'Anonimizar', timestamp: '2024-02-10 16:05:00', details: 'Documento anonimizado com tipo "Dados fictícios" e prompt "Jurídico — partes e contratos" na esteira "Análise Jurídica de Contratos"', stage: 'Análise Jurídica' }
         ]
       },
       {
@@ -235,7 +237,6 @@ interface WorkflowAuditData {
   name: string;
   team: string;
   stages: string[];
-  status: 'ativa' | 'pausada';
   createdAt: string;
   createdBy: string;
 }
@@ -246,7 +247,6 @@ const workflowsAuditData: WorkflowAuditData[] = [
     name: 'Processamento de Notas Fiscais',
     team: 'Time Financeiro',
     stages: ['Recebimento', 'Verificação Financeira', 'Aprovação de Pagamento', 'Pagos e Conciliados'],
-    status: 'ativa',
     createdAt: '2024-01-15 10:00:00',
     createdBy: 'Admin Sistema'
   },
@@ -255,7 +255,6 @@ const workflowsAuditData: WorkflowAuditData[] = [
     name: 'Gestão de Documentos RH',
     team: 'Time RH',
     stages: ['Triagem Inicial', 'Validação Documentos', 'Aprovação Gestor', 'Processados'],
-    status: 'ativa',
     createdAt: '2024-01-20 14:00:00',
     createdBy: 'Admin Sistema'
   },
@@ -264,7 +263,6 @@ const workflowsAuditData: WorkflowAuditData[] = [
     name: 'Análise Jurídica de Contratos',
     team: 'Time Jurídico',
     stages: ['Protocolo', 'Análise Jurídica', 'Elaboração Parecer', 'Aprovado'],
-    status: 'ativa',
     createdAt: '2024-01-25 09:00:00',
     createdBy: 'Admin Sistema'
   }
@@ -333,6 +331,7 @@ const getActionBadgeClass = (action: string) => {
     case 'Criar esteira': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300';
     case 'Editar esteira': return 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300';
     case 'Excluir esteira': return 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300';
+    case 'Anonimizar': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300';
     default: return 'bg-gray-100 text-gray-700 dark:bg-gray-700/40 dark:text-gray-300';
   }
 };
@@ -902,10 +901,6 @@ function WorkflowAuditTab() {
                       <span className="text-xs text-woopi-ai-gray truncate">
                         {wf.team}
                       </span>
-                      <span className="text-gray-400 dark:text-[#7a7f9d] mx-0.5">&middot;</span>
-                      <Badge className={`text-[10px] px-1.5 py-0 ${wf.status === 'ativa' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'}`}>
-                        {wf.status === 'ativa' ? 'Ativa' : 'Pausada'}
-                      </Badge>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-woopi-ai-gray">
                       <span className="flex items-center gap-1">

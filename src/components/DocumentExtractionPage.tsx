@@ -54,7 +54,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { toast } from 'sonner';
-import { AnonimizarButton } from './AnonimizarButton';
+import { AnonimizarButton, AnonymizationResult } from './AnonimizarButton';
+import { ExternalLink, ShieldCheck as ShieldCheckIcon } from 'lucide-react';
 
 interface ExtractedField {
   id: string;
@@ -86,7 +87,10 @@ interface PillTab {
 export function DocumentExtractionPage() {
   const navigate = useNavigate();
   const { documentId } = useParams();
-  
+
+  // Anonymization state — tracks the URL of the last opened anonymized tab
+  const [lastAnonymizacaoUrl, setLastAnonymizacaoUrl] = useState<string | null>(null);
+
   // Pills navigation state
   const [currentPillIndex, setCurrentPillIndex] = useState(0);
   
@@ -892,6 +896,13 @@ Próximos passos: Aguardando aprovação do gestor financeiro para liberação d
       action: 'Editar resposta',
       timestamp: '2024-02-11 11:25:30',
       details: 'Campo "CNPJ" validado e confirmado'
+    },
+    {
+      id: '7',
+      user: 'Ana Costa',
+      action: 'Anonimizar',
+      timestamp: '2024-02-11 11:45:30',
+      details: 'Documento anonimizado com tipo "Mascaramento parcial" e prompt "LGPD — dados pessoais sensíveis" na esteira "Processamento de Notas Fiscais"'
     }
   ];
 
@@ -1027,6 +1038,21 @@ Próximos passos: Aguardando aprovação do gestor financeiro para liberação d
     setIsEditingGeneration(false);
   };
 
+  // Handler placed here so selectedBatchDoc is in scope
+  const handleAnonymized = (result: AnonymizationResult) => {
+    const params = new URLSearchParams({
+      type: result.type ?? '',
+      prompt: result.prompt ?? '',
+      docName: selectedBatchDoc?.name ?? 'Documento',
+      docId: documentId ?? '',
+      workflowTitle: selectedBatchDoc?.workflowTitle ?? '',
+      sourceUrl: window.location.href,
+    });
+    const url = `/documentos/${documentId ?? 'doc'}/anonimizado?${params.toString()}`;
+    setLastAnonymizacaoUrl(url);
+    window.open(url, '_blank');
+  };
+
   // Render document batch selector inline
   const renderBatchSelector = () => (
     <div className="flex items-center gap-2 mb-3">
@@ -1065,8 +1091,24 @@ Próximos passos: Aguardando aprovação do gestor financeiro para liberação d
       <Badge variant="outline" className="text-xs bg-blue-50 text-[#0073ea] border-blue-200 whitespace-nowrap">
         {filteredBatchDocuments.length} docs {filterFailures ? '(filtrado)' : 'no lote'}
       </Badge>
-      <div className="ml-auto">
-        <AnonimizarButton />
+      <div className="ml-auto flex items-center gap-2">
+        {lastAnonymizacaoUrl && (
+          <a
+            href={lastAnonymizacaoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-md px-2.5 h-7 text-xs font-medium transition-colors border"
+            style={{ color: '#059669', borderColor: '#a7f3d0', background: '#ecfdf5' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#d1fae5'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#ecfdf5'; }}
+            title="Abrir última versão anonimizada em nova aba"
+          >
+            <ShieldCheckIcon className="w-3.5 h-3.5" />
+            Última anonimização
+            <ExternalLink className="w-3 h-3 opacity-60" />
+          </a>
+        )}
+        <AnonimizarButton onAnonymized={handleAnonymized} />
       </div>
     </div>
   );
@@ -2175,6 +2217,7 @@ Próximos passos: Aguardando aprovação do gestor financeiro para liberação d
                         entry.action === 'Finalizar' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300' :
                         entry.action === 'Deletar' ? 'bg-gray-100 dark:bg-gray-700/40 text-gray-700 dark:text-gray-300' :
                         entry.action === 'Perguntar ao documento' ? 'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300' :
+                        entry.action === 'Anonimizar' ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300' :
                         'bg-gray-100 dark:bg-gray-700/40 text-gray-700 dark:text-gray-300'
                       } hover:bg-opacity-100 text-xs px-2 py-1`}>
                         {entry.action}

@@ -42,6 +42,7 @@ import { PromptEditPage } from './components/PromptEditPage';
 import { PromptsImportPage } from './components/PromptsImportPage';
 import { APITemplatesPage } from './components/APITemplatesPage';
 import { APITemplateFormPage } from './components/APITemplateFormPage';
+import { AnonymizedDocumentPage } from './components/AnonymizedDocumentPage';
 import { Toaster } from './components/ui/sonner';
 
 export default function App() {
@@ -127,6 +128,11 @@ export default function App() {
               <Toaster position="top-right" />
             </LayoutWrapper>
           } 
+        />
+        {/* Standalone page — opened in new tab, no app layout */}
+        <Route 
+          path="/documentos/:documentId/anonimizado" 
+          element={<AnonymizedDocumentPage />}
         />
         <Route 
           path="/ferramentas" 

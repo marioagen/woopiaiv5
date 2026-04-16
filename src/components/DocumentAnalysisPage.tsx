@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate, useSearchParams } from 'react-router';
 import { Resizable } from 're-resizable';
 import { 
   ArrowLeft,
@@ -20,7 +20,9 @@ import {
   PanelRight,
   CircleX,
   Search,
-  X
+  X,
+  ShieldCheck,
+  Download,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
@@ -31,7 +33,274 @@ import { Textarea } from './ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from 'sonner';
-import { AnonimizarButton } from './AnonimizarButton';
+import { AnonimizarButton, AnonymizationResult, ANONYMIZATION_TYPES } from './AnonimizarButton';
+
+// ---------------------------------------------------------------------------
+// Anonymized document preview — simulates a redacted contract
+// ---------------------------------------------------------------------------
+
+function getRedaction(text: string, type: string): React.ReactNode {
+  if (!type || type === 'mascaramento_total') {
+    return <span className="inline-block align-middle bg-gray-800 dark:bg-gray-200 text-transparent rounded-sm select-none leading-none" style={{ letterSpacing: 0, fontSize: 'inherit' }}>{'\u2588'.repeat(text.length)}</span>;
+  }
+  if (type === 'mascaramento_parcial') {
+    const visible = text.slice(0, Math.max(1, Math.floor(text.length * 0.3)));
+    return <><span className="opacity-60">{visible}</span><span className="inline-block align-middle bg-gray-700 dark:bg-gray-300 text-transparent rounded-sm select-none">{'\u2588'.repeat(text.length - visible.length)}</span></>;
+  }
+  if (type === 'substituir_iniciais') {
+    const initials = text.split(' ').filter(Boolean).map(w => w[0].toUpperCase() + '.').join(' ');
+    return <span className="font-mono text-amber-700 dark:text-amber-400">{initials}</span>;
+  }
+  if (type === 'dados_ficticios') {
+    const fakeMap: Record<string, string> = {
+      'Empresa ABC Tecnologia Ltda': 'Sigma Corp Soluções Ltda',
+      'Fornecedor XYZ S.A.': 'Omega Suprimentos S.A.',
+      '12.345.678/0001-90': '99.888.777/0001-11',
+      '98.765.432/0001-10': '11.222.333/0001-44',
+      'Av. Paulista, 1000 - São Paulo/SP': 'Rua das Nações, 200 - Curitiba/PR',
+      'Rua das Flores, 500 - Rio de Janeiro/RJ': 'Av. Central, 800 - Belo Horizonte/MG',
+      'R$ 450.000,00': 'R$ 312.000,00',
+      'R$ 37.500,00': 'R$ 26.000,00',
+    };
+    return <span className="text-purple-700 dark:text-purple-400 italic">{fakeMap[text] ?? text.split('').reverse().join('').slice(0, text.length)}</span>;
+  }
+  if (type === 'referencias_relativas') {
+    const refMap: Record<string, string> = {
+      'Empresa ABC Tecnologia Ltda': 'Parte Contratante',
+      'Fornecedor XYZ S.A.': 'Parte Contratada',
+      '12.345.678/0001-90': 'CNPJ da Contratante',
+      '98.765.432/0001-10': 'CNPJ da Contratada',
+      'Av. Paulista, 1000 - São Paulo/SP': 'Sede da Contratante',
+      'Rua das Flores, 500 - Rio de Janeiro/RJ': 'Sede da Contratada',
+    };
+    return <span className="text-blue-700 dark:text-blue-400 font-medium">[{refMap[text] ?? 'Dado referenciado'}]</span>;
+  }
+  return <span className="inline-block bg-gray-800 text-transparent rounded-sm select-none">{'\u2588'.repeat(text.length)}</span>;
+}
+
+interface AnonymizedDocumentViewProps {
+  type: string;
+}
+
+function AnonymizedDocumentView({ type }: AnonymizedDocumentViewProps) {
+  const R = (text: string) => getRedaction(text, type);
+
+  return (
+    <div className="w-full bg-white rounded-lg shadow-sm border border-woopi-ai-border overflow-hidden">
+      {/* Anonymized badge banner */}
+      <div className="flex items-center gap-2 px-5 py-2.5 bg-emerald-50 border-b border-emerald-200">
+        <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+        <span className="text-xs font-medium text-emerald-700">
+          Versão anonimizada —{' '}
+          {ANONYMIZATION_TYPES.find(t => t.value === type)?.label ?? 'Mascaramento total'}
+        </span>
+      </div>
+
+      {/* Simulated document body */}
+      <div className="p-8 font-serif text-sm text-gray-800 leading-relaxed space-y-5 max-w-2xl mx-auto">
+        <div className="text-center space-y-1 mb-8">
+          <p className="text-xs font-sans text-gray-400 tracking-widest uppercase">Contrato</p>
+          <h2 className="text-base font-bold tracking-wide">
+            CONTRATO DE FORNECIMENTO N° CT-████-████
+          </h2>
+        </div>
+
+        <p>
+          Pelo presente instrumento particular de contrato de fornecimento de materiais e
+          serviços, de um lado, na qualidade de <strong>CONTRATANTE</strong>:{' '}
+          <strong>{R('Empresa ABC Tecnologia Ltda')}</strong>, sociedade limitada inscrita no
+          CNPJ/ME sob n° <strong>{R('12.345.678/0001-90')}</strong>, com sede
+          à {R('Av. Paulista, 1000 - São Paulo/SP')}.
+        </p>
+
+        <p>
+          E do outro lado, na qualidade de <strong>CONTRATADA</strong>:{' '}
+          <strong>{R('Fornecedor XYZ S.A.')}</strong>, inscrita no CNPJ/ME sob n°{' '}
+          <strong>{R('98.765.432/0001-10')}</strong>, com sede
+          à {R('Rua das Flores, 500 - Rio de Janeiro/RJ')}.
+        </p>
+
+        <div className="border-l-2 border-gray-200 pl-4 space-y-2">
+          <p className="font-sans text-xs font-semibold text-gray-500 uppercase tracking-widest">
+            Cláusula 1ª — Objeto
+          </p>
+          <p>
+            O presente contrato tem por objeto o fornecimento de materiais de escritório e
+            equipamentos conforme especificações constantes no Anexo I.
+          </p>
+        </div>
+
+        <div className="border-l-2 border-gray-200 pl-4 space-y-2">
+          <p className="font-sans text-xs font-semibold text-gray-500 uppercase tracking-widest">
+            Cláusula 2ª — Valor e Pagamento
+          </p>
+          <p>
+            O valor total do contrato é de <strong>{R('R$ 450.000,00')}</strong>, a ser pago
+            mensalmente em parcelas de <strong>{R('R$ 37.500,00')}</strong>, mediante boleto
+            bancário com vencimento em 30 dias.
+          </p>
+        </div>
+
+        <div className="border-l-2 border-gray-200 pl-4 space-y-2">
+          <p className="font-sans text-xs font-semibold text-gray-500 uppercase tracking-widest">
+            Cláusula 3ª — Vigência
+          </p>
+          <p>
+            Este contrato vigorará pelo prazo de <strong>12 (doze) meses</strong>, com início
+            em <strong>01/02/2024</strong> e término em <strong>31/01/2025</strong>, podendo
+            ser renovado mediante acordo entre as partes.
+          </p>
+        </div>
+
+        <div className="border-l-2 border-gray-200 pl-4 space-y-2">
+          <p className="font-sans text-xs font-semibold text-gray-500 uppercase tracking-widest">
+            Cláusula 4ª — Reajuste
+          </p>
+          <p>
+            Os valores serão reajustados trimestralmente pelo índice <strong>IPCA</strong>,
+            acumulado no período.
+          </p>
+        </div>
+
+        <div className="mt-10 pt-6 border-t border-gray-200 space-y-8 text-xs text-gray-500 font-sans">
+          <p className="text-center">São Paulo, 15 de janeiro de 2024.</p>
+          <div className="grid grid-cols-2 gap-8 text-center">
+            <div className="space-y-1">
+              <div className="border-b border-gray-300 pb-1 mb-2">&nbsp;</div>
+              <p className="font-medium">{R('Empresa ABC Tecnologia Ltda')}</p>
+              <p className="text-gray-400">CONTRATANTE</p>
+            </div>
+            <div className="space-y-1">
+              <div className="border-b border-gray-300 pb-1 mb-2">&nbsp;</div>
+              <p className="font-medium">{R('Fornecedor XYZ S.A.')}</p>
+              <p className="text-gray-400">CONTRATADA</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// DocumentViewerPanel — toolbar + viewer area shared by split and doc-only modes
+// ---------------------------------------------------------------------------
+
+interface DocumentViewerPanelProps {
+  workflowName: string;
+  documentName: string;
+  anonymizationResult: AnonymizationResult | null;
+  docView: 'original' | 'anonymized';
+  onDocViewChange: (v: 'original' | 'anonymized') => void;
+  onAnonymized: (result: AnonymizationResult) => void;
+  onDownload: () => void;
+}
+
+function DocumentViewerPanel({
+  workflowName,
+  documentName,
+  anonymizationResult,
+  docView,
+  onDocViewChange,
+  onAnonymized,
+  onDownload,
+}: DocumentViewerPanelProps) {
+  return (
+    <div className="space-y-4">
+      {/* Title row */}
+      <div className="text-center">
+        <h3 className="text-sm text-woopi-ai-dark-gray">
+          <span className="font-bold">{workflowName}</span> -{' '}
+          <span className="font-medium">{documentName}</span>
+        </h3>
+      </div>
+
+      {/* Toolbar row */}
+      <div className="flex items-center gap-2 text-xs text-woopi-ai-gray flex-wrap">
+        <Button variant="outline" size="sm" className="h-6 px-2 text-xs">
+          Anterior
+        </Button>
+        <span>Página 1 de 2</span>
+        <Button variant="outline" size="sm" className="h-6 px-2 text-xs">
+          Próxima
+        </Button>
+
+        <div className="ml-auto flex items-center gap-2">
+          {anonymizationResult ? (
+            <>
+              {/* View toggle pill */}
+              <div className="flex items-center rounded-md border border-border overflow-hidden text-xs font-medium shadow-sm">
+                <button
+                  onClick={() => onDocViewChange('original')}
+                  className={`flex items-center gap-1.5 px-3 h-7 transition-colors ${
+                    docView === 'original'
+                      ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100'
+                      : 'bg-white text-gray-500 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  <FileText className="w-3 h-3" />
+                  Original
+                </button>
+                <div className="w-px h-7 bg-border" />
+                <button
+                  onClick={() => onDocViewChange('anonymized')}
+                  className={`flex items-center gap-1.5 px-3 h-7 transition-colors ${
+                    docView === 'anonymized'
+                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                      : 'bg-white text-gray-500 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  <ShieldCheck className="w-3 h-3" />
+                  Anonimizado
+                </button>
+              </div>
+
+              {/* Download anonymized */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onDownload}
+                className="h-7 px-2 text-xs flex items-center gap-1.5 border-gray-300 text-gray-600 hover:bg-gray-50"
+              >
+                <Download className="w-3 h-3" />
+                Baixar
+              </Button>
+
+              {/* Re-anonymize */}
+              <AnonimizarButton
+                onAnonymized={onAnonymized}
+                variant="re-anonymize"
+              />
+            </>
+          ) : (
+            <AnonimizarButton onAnonymized={onAnonymized} />
+          )}
+        </div>
+      </div>
+
+      {/* Document viewer area */}
+      {docView === 'anonymized' && anonymizationResult ? (
+        <AnonymizedDocumentView type={anonymizationResult.type} />
+      ) : (
+        <div className="w-full min-h-[600px] bg-white rounded-lg shadow-sm border border-woopi-ai-border flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <FileText className="w-16 h-16 text-woopi-ai-gray mx-auto" />
+            <div>
+              <h4 className="text-lg font-medium text-woopi-ai-dark-gray mb-2">
+                DOCUMENTO AQUI
+              </h4>
+              <p className="text-sm text-woopi-ai-gray">
+                Visualização do documento seria carregada aqui
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 
 interface ExtractedField {
   id: string;
@@ -42,14 +311,39 @@ interface ExtractedField {
   category: 'Identificação' | 'Valores' | 'Datas' | 'Endereço' | 'Outros';
 }
 
+const PATH_DOCUMENTS = '/documentos';
+const PATH_WORKFLOW_BOARD = '/documentos/workflow';
+
 export function DocumentAnalysisPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { id, workflow } = useParams();
+
+  const returnPath =
+    searchParams.get('from') === 'workflow' ? PATH_WORKFLOW_BOARD : PATH_DOCUMENTS;
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'document' | 'split' | 'fields'>('split');
   
   // Resizable column width state
   const [leftColumnWidth, setLeftColumnWidth] = useState(50); // percentage
+
+  // Anonymization state
+  const [anonymizationResult, setAnonymizationResult] = useState<AnonymizationResult | null>(null);
+  const [docView, setDocView] = useState<'original' | 'anonymized'>('original');
+
+  const handleAnonymized = (result: AnonymizationResult) => {
+    setAnonymizationResult(result);
+    setDocView('anonymized');
+  };
+
+  const handleDownloadAnonymized = () => {
+    if (!anonymizationResult) return;
+    const a = document.createElement('a');
+    a.href = anonymizationResult.downloadUrl;
+    a.download = 'documento_anonimizado.pdf';
+    a.click();
+    toast.success('Download iniciado!');
+  };
 
   // Mock document database - simulating fetching by ID
   const documentDatabase: Record<string, { name: string; type: string }> = {
@@ -218,12 +512,12 @@ export function DocumentAnalysisPage() {
   const handleApproveDocument = () => {
     toast.success('Documento aprovado com sucesso!');
     setTimeout(() => {
-      navigate('/documentos');
+      navigate(returnPath);
     }, 1500);
   };
 
   const handleBack = () => {
-    navigate('/documentos');
+    navigate(returnPath);
   };
 
   // Reprovar modal state
@@ -256,7 +550,7 @@ export function DocumentAnalysisPage() {
     setReprovarEtapa('');
     setReprovarAtribuir('');
     setReprovarUserSearch('');
-    setTimeout(() => navigate('/documentos'), 1500);
+    setTimeout(() => navigate(returnPath), 1500);
   };
 
   // Group fields by category
@@ -281,7 +575,11 @@ export function DocumentAnalysisPage() {
               className="flex items-center gap-2 text-woopi-ai-gray hover:text-woopi-ai-dark-gray"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Documentos e Análise</span>
+              <span className="hidden sm:inline">
+                {returnPath === PATH_WORKFLOW_BOARD
+                  ? 'Esteiras de Processamento'
+                  : 'Documentos e Análise'}
+              </span>
               <span className="sm:hidden">Voltar</span>
             </Button>
             <Separator orientation="vertical" className="h-6" />
@@ -504,37 +802,15 @@ export function DocumentAnalysisPage() {
               className="bg-gray-50 border-r border-woopi-ai-border flex flex-col"
             >
               <div className="flex-1 overflow-y-auto p-4">
-                <div className="mb-4 text-center">
-                  <h3 className="text-sm text-woopi-ai-dark-gray mb-3">
-                    <span className="font-bold">{workflowName}</span> - <span className="font-medium">{documentInfo.name}</span>
-                  </h3>
-                  <div className="flex items-center gap-2 text-xs text-woopi-ai-gray">
-                    <Button variant="outline" size="sm" className="h-6 px-2 text-xs">
-                      Anterior
-                    </Button>
-                    <span>Página 1 de 2</span>
-                    <Button variant="outline" size="sm" className="h-6 px-2 text-xs">
-                      Próxima
-                    </Button>
-                    <div className="ml-auto">
-                      <AnonimizarButton />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="w-full min-h-[600px] bg-white rounded-lg shadow-sm border border-woopi-ai-border flex items-center justify-center">
-                  <div className="text-center space-y-4">
-                    <FileText className="w-16 h-16 text-woopi-ai-gray mx-auto" />
-                    <div>
-                      <h4 className="text-lg font-medium text-woopi-ai-dark-gray mb-2">
-                        DOCUMENTO AQUI
-                      </h4>
-                      <p className="text-sm text-woopi-ai-gray">
-                        Visualização do documento seria carregada aqui
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <DocumentViewerPanel
+                  workflowName={workflowName}
+                  documentName={documentInfo.name}
+                  anonymizationResult={anonymizationResult}
+                  docView={docView}
+                  onDocViewChange={setDocView}
+                  onAnonymized={handleAnonymized}
+                  onDownload={handleDownloadAnonymized}
+                />
               </div>
             </Resizable>
           )}
@@ -543,37 +819,15 @@ export function DocumentAnalysisPage() {
           {viewMode === 'document' && (
             <div className="bg-gray-50 border-r border-woopi-ai-border flex flex-col w-full">
               <div className="flex-1 overflow-y-auto p-4">
-                <div className="mb-4 text-center">
-                  <h3 className="text-sm text-woopi-ai-dark-gray mb-3">
-                    <span className="font-bold">{workflowName}</span> - <span className="font-medium">{documentInfo.name}</span>
-                  </h3>
-                  <div className="flex items-center gap-2 text-xs text-woopi-ai-gray">
-                    <Button variant="outline" size="sm" className="h-6 px-2 text-xs">
-                      Anterior
-                    </Button>
-                    <span>Página 1 de 2</span>
-                    <Button variant="outline" size="sm" className="h-6 px-2 text-xs">
-                      Próxima
-                    </Button>
-                    <div className="ml-auto">
-                      <AnonimizarButton />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="w-full min-h-[600px] bg-white rounded-lg shadow-sm border border-woopi-ai-border flex items-center justify-center">
-                  <div className="text-center space-y-4">
-                    <FileText className="w-16 h-16 text-woopi-ai-gray mx-auto" />
-                    <div>
-                      <h4 className="text-lg font-medium text-woopi-ai-dark-gray mb-2">
-                        DOCUMENTO AQUI
-                      </h4>
-                      <p className="text-sm text-woopi-ai-gray">
-                        Visualização do documento seria carregada aqui
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <DocumentViewerPanel
+                  workflowName={workflowName}
+                  documentName={documentInfo.name}
+                  anonymizationResult={anonymizationResult}
+                  docView={docView}
+                  onDocViewChange={setDocView}
+                  onAnonymized={handleAnonymized}
+                  onDownload={handleDownloadAnonymized}
+                />
               </div>
             </div>
           )}
