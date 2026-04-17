@@ -88,8 +88,17 @@ export function DocumentExtractionPage() {
   const navigate = useNavigate();
   const { documentId } = useParams();
 
-  // Anonymization state — tracks the URL of the last opened anonymized tab
-  const [lastAnonymizacaoUrl, setLastAnonymizacaoUrl] = useState<string | null>(null);
+  // Anonymization history state
+  interface AnonymizationEntry {
+    url: string;
+    docName: string;
+    type: string;
+    prompt: string;
+    workflowTitle: string;
+    timestamp: Date;
+  }
+  const [anonymizationHistory, setAnonymizationHistory] = useState<AnonymizationEntry[]>([]);
+  const [showAnonymizationModal, setShowAnonymizationModal] = useState(false);
 
   // Pills navigation state
   const [currentPillIndex, setCurrentPillIndex] = useState(0);
@@ -1040,16 +1049,24 @@ Próximos passos: Aguardando aprovação do gestor financeiro para liberação d
 
   // Handler placed here so selectedBatchDoc is in scope
   const handleAnonymized = (result: AnonymizationResult) => {
+    const docName = selectedBatchDoc?.name ?? 'Documento';
     const params = new URLSearchParams({
       type: result.type ?? '',
       prompt: result.prompt ?? '',
-      docName: selectedBatchDoc?.name ?? 'Documento',
+      docName,
       docId: documentId ?? '',
       workflowTitle: selectedBatchDoc?.workflowTitle ?? '',
       sourceUrl: window.location.href,
     });
     const url = `/documentos/${documentId ?? 'doc'}/anonimizado?${params.toString()}`;
-    setLastAnonymizacaoUrl(url);
+    setAnonymizationHistory(prev => [{
+      url,
+      docName,
+      type: result.type ?? '',
+      prompt: result.prompt ?? '',
+      workflowTitle: selectedBatchDoc?.workflowTitle ?? '',
+      timestamp: new Date(),
+    }, ...prev]);
     window.open(url, '_blank');
   };
 
@@ -1092,21 +1109,28 @@ Próximos passos: Aguardando aprovação do gestor financeiro para liberação d
         {filteredBatchDocuments.length} docs {filterFailures ? '(filtrado)' : 'no lote'}
       </Badge>
       <div className="ml-auto flex items-center gap-2">
-        {lastAnonymizacaoUrl && (
-          <a
-            href={lastAnonymizacaoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 rounded-md px-2.5 h-7 text-xs font-medium transition-colors border"
+        {anonymizationHistory.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowAnonymizationModal(true)}
+            className="flex items-center gap-1.5 rounded-md px-2.5 h-7 text-xs font-medium transition-all border relative"
             style={{ color: '#059669', borderColor: '#a7f3d0', background: '#ecfdf5' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#d1fae5'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#ecfdf5'; }}
-            title="Abrir última versão anonimizada em nova aba"
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#d1fae5'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#ecfdf5'; }}
+            title="Ver histórico de anonimizações"
           >
             <ShieldCheckIcon className="w-3.5 h-3.5" />
             Última anonimização
-            <ExternalLink className="w-3 h-3 opacity-60" />
-          </a>
+            {anonymizationHistory.length > 1 && (
+              <span
+                className="flex items-center justify-center rounded-full text-[10px] font-bold min-w-[16px] h-4 px-1 leading-none"
+                style={{ background: '#059669', color: '#fff' }}
+              >
+                {anonymizationHistory.length}
+              </span>
+            )}
+            <ChevronRight className="w-3 h-3 opacity-50" />
+          </button>
         )}
         <AnonimizarButton onAnonymized={handleAnonymized} />
       </div>
@@ -2522,6 +2546,163 @@ Próximos passos: Aguardando aprovação do gestor financeiro para liberação d
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Anonymization History Modal */}
+      {showAnonymizationModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(2px)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowAnonymizationModal(false); }}
+        >
+          <div
+            className="relative flex flex-col rounded-2xl shadow-2xl overflow-hidden"
+            style={{
+              width: 480,
+              maxWidth: '95vw',
+              maxHeight: '82vh',
+              background: '#fff',
+              border: '1.5px solid #d1fae5',
+            }}
+          >
+            {/* Header */}
+            <div
+              className="flex items-center justify-between px-6 py-4 flex-shrink-0"
+              style={{ background: 'linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%)', borderBottom: '1px solid #bbf7d0' }}
+            >
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="flex items-center justify-center w-8 h-8 rounded-xl"
+                  style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 2px 8px rgba(16,185,129,0.3)' }}
+                >
+                  <ShieldCheckIcon className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold" style={{ color: '#065f46' }}>Histórico de Anonimizações</h2>
+                  <p className="text-[11px]" style={{ color: '#6ee7b7' }}>
+                    {anonymizationHistory.length} {anonymizationHistory.length === 1 ? 'versão gerada' : 'versões geradas'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAnonymizationModal(false)}
+                className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors hover:bg-white/60"
+                style={{ color: '#6ee7b7' }}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Cards list */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5" style={{ background: '#f9fafb' }}>
+              {anonymizationHistory.map((entry, index) => {
+                const isFirst = index === 0;
+                const date = entry.timestamp;
+                const dateLabel = date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+                const timeLabel = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                return (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => { window.open(entry.url, '_blank'); }}
+                    className="w-full text-left group rounded-xl border transition-all duration-150 overflow-hidden"
+                    style={{
+                      background: isFirst ? '#fff' : '#fff',
+                      borderColor: isFirst ? '#6ee7b7' : '#e5e7eb',
+                      boxShadow: isFirst ? '0 2px 12px rgba(16,185,129,0.10)' : '0 1px 4px rgba(0,0,0,0.04)',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = '#6ee7b7';
+                      (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 16px rgba(16,185,129,0.15)';
+                      (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = isFirst ? '#6ee7b7' : '#e5e7eb';
+                      (e.currentTarget as HTMLButtonElement).style.boxShadow = isFirst ? '0 2px 12px rgba(16,185,129,0.10)' : '0 1px 4px rgba(0,0,0,0.04)';
+                      (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <div className="flex items-stretch">
+                      {/* Left color bar */}
+                      <div
+                        className="w-1 flex-shrink-0"
+                        style={{ background: isFirst ? 'linear-gradient(180deg, #10b981, #059669)' : '#e5e7eb' }}
+                      />
+                      <div className="flex-1 px-4 py-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            {isFirst && (
+                              <span
+                                className="flex-shrink-0 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full"
+                                style={{ background: '#d1fae5', color: '#059669' }}
+                              >
+                                Mais recente
+                              </span>
+                            )}
+                            <span className="text-xs font-semibold truncate" style={{ color: '#111827' }}>
+                              {entry.docName}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <ExternalLink
+                              className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity"
+                              style={{ color: '#059669' }}
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" style={{ color: '#9ca3af' }} />
+                            <span className="text-[11px] capitalize" style={{ color: '#6b7280' }}>{dateLabel}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" style={{ color: '#9ca3af' }} />
+                            <span className="text-[11px]" style={{ color: '#6b7280' }}>{timeLabel}</span>
+                          </div>
+                          {entry.type && (
+                            <span
+                              className="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
+                              style={{ background: '#f3f4f6', color: '#374151' }}
+                            >
+                              {entry.type}
+                            </span>
+                          )}
+                        </div>
+                        {entry.workflowTitle && (
+                          <div className="mt-1 flex items-center gap-1">
+                            <Briefcase className="w-3 h-3 flex-shrink-0" style={{ color: '#9ca3af' }} />
+                            <span className="text-[11px] truncate" style={{ color: '#9ca3af' }}>{entry.workflowTitle}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div
+              className="flex-shrink-0 flex items-center justify-between px-6 py-3"
+              style={{ background: '#fff', borderTop: '1px solid #e5e7eb' }}
+            >
+              <span className="text-[11px]" style={{ color: '#9ca3af' }}>
+                Clique em um item para abrir em nova aba
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowAnonymizationModal(false)}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                style={{ background: '#f3f4f6', color: '#374151' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#e5e7eb'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#f3f4f6'; }}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

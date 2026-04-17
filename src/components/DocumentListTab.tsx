@@ -16,6 +16,13 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Filter,
+  ShieldCheck,
+  ShieldPlus,
+  ExternalLink,
+  Calendar,
+  Clock,
+  Briefcase,
+  Loader2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Button } from './ui/button';
@@ -53,8 +60,16 @@ interface Document {
   workflows: string[];
 }
 
-type SortField = 'name' | 'description' | 'uploadDate' | 'status' | 'workflows';
+type SortField = 'name' | 'description' | 'uploadDate' | 'status' | 'workflows' | 'anonymization';
 type SortDirection = 'asc' | 'desc' | null;
+
+interface AnonymizationEntry {
+  url: string;
+  docName: string;
+  type: string;
+  workflowTitle: string;
+  timestamp: Date;
+}
 
 export function DocumentListTab() {
   const navigate = useNavigate();
@@ -96,6 +111,54 @@ export function DocumentListTab() {
   const [workflowSelectorOpen, setWorkflowSelectorOpen] = useState(false);
   const [selectedDocumentForConsult, setSelectedDocumentForConsult] = useState<Document | null>(null);
   const [workflowSearchTerm, setWorkflowSearchTerm] = useState('');
+
+  // Anonymization history: keyed by doc.id
+  const [anonymizationHistory, setAnonymizationHistory] = useState<Record<number, AnonymizationEntry[]>>({
+    1: [
+      { url: '/documentos/1/anonimizado', docName: 'Contrato_Fornecedor_2024', type: 'Padrão', workflowTitle: 'Análise Jurídica', timestamp: new Date('2024-01-16T14:32:00') },
+      { url: '/documentos/1/anonimizado', docName: 'Contrato_Fornecedor_2024', type: 'Completo', workflowTitle: 'Análise Jurídica', timestamp: new Date('2024-01-15T09:18:00') },
+    ],
+    4: [
+      { url: '/documentos/4/anonimizado', docName: 'Manual_Procedimentos', type: 'Padrão', workflowTitle: 'Validação RH', timestamp: new Date('2024-01-13T11:05:00') },
+    ],
+    7: [
+      { url: '/documentos/7/anonimizado', docName: 'Relatório_Auditoria_2023', type: 'Avançado', workflowTitle: 'Compliance e Auditoria', timestamp: new Date('2024-01-10T16:45:00') },
+      { url: '/documentos/7/anonimizado', docName: 'Relatório_Auditoria_2023', type: 'Padrão', workflowTitle: 'Compliance e Auditoria', timestamp: new Date('2024-01-09T08:30:00') },
+      { url: '/documentos/7/anonimizado', docName: 'Relatório_Auditoria_2023', type: 'Padrão', workflowTitle: 'Compliance e Auditoria', timestamp: new Date('2024-01-09T07:55:00') },
+    ],
+    11: [
+      { url: '/documentos/11/anonimizado', docName: 'Contrato_Aluguel_Sede', type: 'Completo', workflowTitle: 'Análise Jurídica', timestamp: new Date('2024-01-06T13:20:00') },
+    ],
+    13: [
+      { url: '/documentos/13/anonimizado', docName: 'Certificado_ISO_9001', type: 'Padrão', workflowTitle: 'Controle de Qualidade', timestamp: new Date('2024-01-04T10:00:00') },
+    ],
+  });
+  const [anonymizationModalDocId, setAnonymizationModalDocId] = useState<number | null>(null);
+  const [processingDocId, setProcessingDocId] = useState<number | null>(null);
+
+  const handleAnonymize = (doc: Document) => {
+    if (processingDocId !== null) return;
+    setProcessingDocId(doc.id);
+    setTimeout(() => {
+      const docName = doc.name.replace(/\.[^/.]+$/, '');
+      const newEntry: AnonymizationEntry = {
+        url: `/documentos/${doc.id}/anonimizado`,
+        docName,
+        type: 'Padrão',
+        workflowTitle: doc.workflows[0] ?? '',
+        timestamp: new Date(),
+      };
+      setAnonymizationHistory(prev => ({
+        ...prev,
+        [doc.id]: [newEntry, ...(prev[doc.id] ?? [])],
+      }));
+      setProcessingDocId(null);
+      const alreadyHad = (anonymizationHistory[doc.id] ?? []).length > 0;
+      toast.success(alreadyHad ? 'Nova versão anonimizada gerada' : 'Documento anonimizado com sucesso', {
+        description: docName,
+      });
+    }, 1200);
+  };
 
   // Documents data
   const [documents, setDocuments] = useState<Document[]>([
@@ -432,8 +495,18 @@ export function DocumentListTab() {
     if (!sortField || !sortDirection) return docs;
 
     return [...docs].sort((a, b) => {
-      let aValue: any = a[sortField];
-      let bValue: any = b[sortField];
+      // Sort by most-recent anonymization timestamp (nulls last)
+      if (sortField === 'anonymization') {
+        const aEntries = anonymizationHistory[a.id] ?? [];
+        const bEntries = anonymizationHistory[b.id] ?? [];
+        const aTime = aEntries.length > 0 ? aEntries[0].timestamp.getTime() : -Infinity;
+        const bTime = bEntries.length > 0 ? bEntries[0].timestamp.getTime() : -Infinity;
+        // asc = oldest first; desc = newest first
+        return sortDirection === 'asc' ? aTime - bTime : bTime - aTime;
+      }
+
+      let aValue: any = a[sortField as keyof Document];
+      let bValue: any = b[sortField as keyof Document];
 
       // Special handling for workflows (array)
       if (sortField === 'workflows') {
@@ -718,13 +791,26 @@ export function DocumentListTab() {
                       {getSortIcon('workflows')}
                     </div>
                   </TableHead>
+                  <TableHead
+                    className="w-[130px] cursor-pointer select-none hover:bg-woopi-ai-light-gray transition-colors"
+                    onClick={() => handleSort('anonymization')}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <ShieldCheck
+                        className="w-3.5 h-3.5 flex-shrink-0"
+                        style={{ color: sortField === 'anonymization' ? '#059669' : undefined }}
+                      />
+                      <span>Anonimização</span>
+                      {getSortIcon('anonymization')}
+                    </div>
+                  </TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedDocuments.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-woopi-ai-gray">
+                    <TableCell colSpan={8} className="text-center py-8 text-woopi-ai-gray">
                       Nenhum documento encontrado
                     </TableCell>
                   </TableRow>
@@ -793,8 +879,59 @@ export function DocumentListTab() {
                           ))}
                         </div>
                       </TableCell>
+                      <TableCell>
+                        {(anonymizationHistory[doc.id] ?? []).length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => setAnonymizationModalDocId(doc.id)}
+                            className="flex items-center gap-1.5 rounded-md px-2 h-6 text-[11px] font-medium transition-all border"
+                            style={{ color: '#059669', borderColor: '#a7f3d0', background: '#ecfdf5' }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#d1fae5'; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#ecfdf5'; }}
+                            title="Ver histórico de anonimizações"
+                          >
+                            <ShieldCheck className="w-3 h-3 flex-shrink-0" />
+                            <span>Histórico</span>
+                            {(anonymizationHistory[doc.id] ?? []).length > 1 && (
+                              <span
+                                className="flex items-center justify-center rounded-full text-[9px] font-bold min-w-[14px] h-3.5 px-1 leading-none"
+                                style={{ background: '#059669', color: '#fff' }}
+                              >
+                                {(anonymizationHistory[doc.id] ?? []).length}
+                              </span>
+                            )}
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-muted-foreground/50">—</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  disabled={processingDocId !== null}
+                                  onClick={() => handleAnonymize(doc)}
+                                  className={
+                                    (anonymizationHistory[doc.id] ?? []).length === 0
+                                      ? 'h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:text-emerald-300 dark:hover:bg-emerald-900/20 transition-colors'
+                                      : 'h-8 w-8 p-0 text-muted-foreground/60 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-900/20 transition-colors'
+                                  }
+                                >
+                                  {processingDocId === doc.id
+                                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                                    : <ShieldPlus className="w-4 h-4" />
+                                  }
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{(anonymizationHistory[doc.id] ?? []).length === 0 ? 'Anonimizar documento' : 'Anonimizar novamente'}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -975,6 +1112,159 @@ export function DocumentListTab() {
           )}
         </CardContent>
       </Card>
+
+      {/* Anonymization History Modal */}
+      {anonymizationModalDocId !== null && (() => {
+        const entries = anonymizationHistory[anonymizationModalDocId] ?? [];
+        const docName = documents.find(d => d.id === anonymizationModalDocId)?.name?.replace(/\.[^/.]+$/, '') ?? 'Documento';
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(2px)' }}
+            onClick={(e) => { if (e.target === e.currentTarget) setAnonymizationModalDocId(null); }}
+          >
+            <div
+              className="relative flex flex-col rounded-2xl shadow-2xl overflow-hidden"
+              style={{ width: 480, maxWidth: '95vw', maxHeight: '82vh', background: '#fff', border: '1.5px solid #d1fae5' }}
+            >
+              {/* Header */}
+              <div
+                className="flex items-center justify-between px-6 py-4 flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%)', borderBottom: '1px solid #bbf7d0' }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className="flex items-center justify-center w-8 h-8 rounded-xl"
+                    style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 2px 8px rgba(16,185,129,0.3)' }}
+                  >
+                    <ShieldCheck className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold" style={{ color: '#065f46' }}>Histórico de Anonimizações</h2>
+                    <p className="text-[11px] truncate max-w-[220px]" style={{ color: '#34d399' }}>
+                      {docName} · {entries.length} {entries.length === 1 ? 'versão' : 'versões'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAnonymizationModalDocId(null)}
+                  className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors hover:bg-white/60"
+                  style={{ color: '#6ee7b7' }}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Cards list */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5" style={{ background: '#f9fafb' }}>
+                {entries.map((entry, index) => {
+                  const isFirst = index === 0;
+                  const dateLabel = entry.timestamp.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+                  const timeLabel = entry.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => window.open(entry.url, '_blank')}
+                      className="w-full text-left group rounded-xl border transition-all duration-150 overflow-hidden"
+                      style={{
+                        background: '#fff',
+                        borderColor: isFirst ? '#6ee7b7' : '#e5e7eb',
+                        boxShadow: isFirst ? '0 2px 12px rgba(16,185,129,0.10)' : '0 1px 4px rgba(0,0,0,0.04)',
+                      }}
+                      onMouseEnter={(e) => {
+                        const el = e.currentTarget as HTMLButtonElement;
+                        el.style.borderColor = '#6ee7b7';
+                        el.style.boxShadow = '0 4px 16px rgba(16,185,129,0.15)';
+                        el.style.transform = 'translateY(-1px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        const el = e.currentTarget as HTMLButtonElement;
+                        el.style.borderColor = isFirst ? '#6ee7b7' : '#e5e7eb';
+                        el.style.boxShadow = isFirst ? '0 2px 12px rgba(16,185,129,0.10)' : '0 1px 4px rgba(0,0,0,0.04)';
+                        el.style.transform = 'translateY(0)';
+                      }}
+                    >
+                      <div className="flex items-stretch">
+                        <div
+                          className="w-1 flex-shrink-0"
+                          style={{ background: isFirst ? 'linear-gradient(180deg, #10b981, #059669)' : '#e5e7eb' }}
+                        />
+                        <div className="flex-1 px-4 py-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              {isFirst && (
+                                <span
+                                  className="flex-shrink-0 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full"
+                                  style={{ background: '#d1fae5', color: '#059669' }}
+                                >
+                                  Mais recente
+                                </span>
+                              )}
+                              <span className="text-xs font-semibold truncate" style={{ color: '#111827' }}>
+                                {entry.docName}
+                              </span>
+                            </div>
+                            <ExternalLink
+                              className="w-3 h-3 flex-shrink-0 opacity-0 group-hover:opacity-60 transition-opacity"
+                              style={{ color: '#059669' }}
+                            />
+                          </div>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" style={{ color: '#9ca3af' }} />
+                              <span className="text-[11px] capitalize" style={{ color: '#6b7280' }}>{dateLabel}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" style={{ color: '#9ca3af' }} />
+                              <span className="text-[11px]" style={{ color: '#6b7280' }}>{timeLabel}</span>
+                            </div>
+                            {entry.type && (
+                              <span
+                                className="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
+                                style={{ background: '#f3f4f6', color: '#374151' }}
+                              >
+                                {entry.type}
+                              </span>
+                            )}
+                          </div>
+                          {entry.workflowTitle && (
+                            <div className="mt-1 flex items-center gap-1">
+                              <Briefcase className="w-3 h-3 flex-shrink-0" style={{ color: '#9ca3af' }} />
+                              <span className="text-[11px] truncate" style={{ color: '#9ca3af' }}>{entry.workflowTitle}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Footer */}
+              <div
+                className="flex-shrink-0 flex items-center justify-between px-6 py-3"
+                style={{ background: '#fff', borderTop: '1px solid #e5e7eb' }}
+              >
+                <span className="text-[11px]" style={{ color: '#9ca3af' }}>
+                  Clique em um item para abrir em nova aba
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setAnonymizationModalDocId(null)}
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                  style={{ background: '#f3f4f6', color: '#374151' }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#e5e7eb'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#f3f4f6'; }}
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Workflow Selector Dialog */}
       <Dialog open={workflowSelectorOpen} onOpenChange={setWorkflowSelectorOpen}>

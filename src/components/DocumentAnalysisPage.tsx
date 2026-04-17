@@ -194,6 +194,7 @@ interface DocumentViewerPanelProps {
   onDocViewChange: (v: 'original' | 'anonymized') => void;
   onAnonymized: (result: AnonymizationResult) => void;
   onDownload: () => void;
+  hideAnonymize?: boolean;
 }
 
 function DocumentViewerPanel({
@@ -204,6 +205,7 @@ function DocumentViewerPanel({
   onDocViewChange,
   onAnonymized,
   onDownload,
+  hideAnonymize = false,
 }: DocumentViewerPanelProps) {
   return (
     <div className="space-y-4">
@@ -267,13 +269,15 @@ function DocumentViewerPanel({
               </Button>
 
               {/* Re-anonymize */}
-              <AnonimizarButton
-                onAnonymized={onAnonymized}
-                variant="re-anonymize"
-              />
+              {!hideAnonymize && (
+                <AnonimizarButton
+                  onAnonymized={onAnonymized}
+                  variant="re-anonymize"
+                />
+              )}
             </>
           ) : (
-            <AnonimizarButton onAnonymized={onAnonymized} />
+            !hideAnonymize && <AnonimizarButton onAnonymized={onAnonymized} />
           )}
         </div>
       </div>
@@ -319,8 +323,8 @@ export function DocumentAnalysisPage() {
   const [searchParams] = useSearchParams();
   const { id, workflow } = useParams();
 
-  const returnPath =
-    searchParams.get('from') === 'workflow' ? PATH_WORKFLOW_BOARD : PATH_DOCUMENTS;
+  const fromWorkflow = searchParams.get('from') === 'workflow';
+  const returnPath = fromWorkflow ? PATH_WORKFLOW_BOARD : PATH_DOCUMENTS;
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'document' | 'split' | 'fields'>('split');
   
@@ -810,6 +814,7 @@ export function DocumentAnalysisPage() {
                   onDocViewChange={setDocView}
                   onAnonymized={handleAnonymized}
                   onDownload={handleDownloadAnonymized}
+                  hideAnonymize={fromWorkflow}
                 />
               </div>
             </Resizable>
@@ -827,6 +832,7 @@ export function DocumentAnalysisPage() {
                   onDocViewChange={setDocView}
                   onAnonymized={handleAnonymized}
                   onDownload={handleDownloadAnonymized}
+                  hideAnonymize={fromWorkflow}
                 />
               </div>
             </div>

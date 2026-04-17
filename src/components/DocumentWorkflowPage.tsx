@@ -1436,16 +1436,6 @@ export function DocumentWorkflowPage() {
                           <TableCell className="text-xs text-muted-foreground">{doc.responsavel}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1.5">
-                              {(doc as any).isAnonymized && (
-                                <button
-                                  type="button"
-                                  onClick={() => window.open(`/documentos/${doc.id.replace('#', '')}/anonimizado`, '_blank')}
-                                  className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200 hover:text-gray-700 transition-colors dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-300 cursor-pointer whitespace-nowrap"
-                                  title="Ver documento anonimizado em nova aba"
-                                >
-                                  Anonimizado
-                                </button>
-                              )}
                             {!isFinalized && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
