@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
@@ -25,7 +25,11 @@ import {
   ArrowUpDown,
   ChevronDown,
   Wrench,
-  Settings2
+  Settings2,
+  Bot,
+  Plug,
+  FileCode2,
+  ClipboardList
 } from 'lucide-react';
 import { Separator } from './ui/separator';
 
@@ -271,6 +275,8 @@ const workflowsAuditData: WorkflowAuditData[] = [
 // ============================================================
 // MOCK DATA - Ações de sistema (ferramentas e esteiras)
 // ============================================================
+type ToolType = 'agente' | 'conector' | 'template_api' | 'questionario';
+
 interface SystemAuditEntry {
   id: string;
   user: string;
@@ -279,18 +285,19 @@ interface SystemAuditEntry {
   details: string;
   resourceType: 'ferramenta' | 'esteira';
   resourceName: string;
+  toolType?: ToolType;
 }
 
 const systemAuditEntries: SystemAuditEntry[] = [
-  { id: 'sys-001', user: 'João Silva', action: 'Criar ferramenta', timestamp: '2024-02-12 16:30:00', details: 'Criou a ferramenta "Extrator de CNPJ"', resourceType: 'ferramenta', resourceName: 'Extrator de CNPJ' },
-  { id: 'sys-002', user: 'João Silva', action: 'Editar ferramenta', timestamp: '2024-02-12 17:15:00', details: 'Editou a ferramenta "Extrator de CNPJ" — alterou prompt de instrução', resourceType: 'ferramenta', resourceName: 'Extrator de CNPJ' },
-  { id: 'sys-003', user: 'Ana Costa', action: 'Criar ferramenta', timestamp: '2024-02-11 10:00:00', details: 'Criou a ferramenta "Classificador de Documentos"', resourceType: 'ferramenta', resourceName: 'Classificador de Documentos' },
-  { id: 'sys-004', user: 'Ana Costa', action: 'Editar ferramenta', timestamp: '2024-02-11 14:20:00', details: 'Editou a ferramenta "Classificador de Documentos" — adicionou novo tipo de documento', resourceType: 'ferramenta', resourceName: 'Classificador de Documentos' },
-  { id: 'sys-005', user: 'Carlos Silva', action: 'Excluir ferramenta', timestamp: '2024-02-10 11:45:00', details: 'Excluiu a ferramenta "Validador de CPF v1" — substituída por versão atualizada', resourceType: 'ferramenta', resourceName: 'Validador de CPF v1' },
-  { id: 'sys-006', user: 'Pedro Oliveira', action: 'Criar ferramenta', timestamp: '2024-02-09 09:30:00', details: 'Criou a ferramenta "Resumo Automático de Contratos"', resourceType: 'ferramenta', resourceName: 'Resumo Automático de Contratos' },
-  { id: 'sys-007', user: 'Maria Santos', action: 'Editar ferramenta', timestamp: '2024-02-08 16:00:00', details: 'Editou a ferramenta "Resumo Automático de Contratos" — ajustou parâmetros de temperatura', resourceType: 'ferramenta', resourceName: 'Resumo Automático de Contratos' },
-  { id: 'sys-008', user: 'Fernanda Alves', action: 'Criar ferramenta', timestamp: '2024-02-07 08:45:00', details: 'Criou a ferramenta "Extrator de Dados RH"', resourceType: 'ferramenta', resourceName: 'Extrator de Dados RH' },
-  { id: 'sys-009', user: 'Roberto Lima', action: 'Excluir ferramenta', timestamp: '2024-02-06 15:30:00', details: 'Excluiu a ferramenta "Parser de XML Legado" — funcionalidade descontinuada', resourceType: 'ferramenta', resourceName: 'Parser de XML Legado' },
+  { id: 'sys-001', user: 'João Silva', action: 'Criar ferramenta', timestamp: '2024-02-12 16:30:00', details: 'Criou o agente "Extrator de CNPJ"', resourceType: 'ferramenta', resourceName: 'Extrator de CNPJ', toolType: 'agente' },
+  { id: 'sys-002', user: 'João Silva', action: 'Editar ferramenta', timestamp: '2024-02-12 17:15:00', details: 'Editou o agente "Extrator de CNPJ" — alterou prompt de instrução', resourceType: 'ferramenta', resourceName: 'Extrator de CNPJ', toolType: 'agente' },
+  { id: 'sys-003', user: 'Ana Costa', action: 'Criar ferramenta', timestamp: '2024-02-11 10:00:00', details: 'Criou o agente "Classificador de Documentos"', resourceType: 'ferramenta', resourceName: 'Classificador de Documentos', toolType: 'agente' },
+  { id: 'sys-004', user: 'Ana Costa', action: 'Editar ferramenta', timestamp: '2024-02-11 14:20:00', details: 'Editou o agente "Classificador de Documentos" — adicionou novo tipo de documento', resourceType: 'ferramenta', resourceName: 'Classificador de Documentos', toolType: 'agente' },
+  { id: 'sys-005', user: 'Carlos Silva', action: 'Excluir ferramenta', timestamp: '2024-02-10 11:45:00', details: 'Excluiu o conector "Validador de CPF v1" — substituído por versão atualizada', resourceType: 'ferramenta', resourceName: 'Validador de CPF v1', toolType: 'conector' },
+  { id: 'sys-006', user: 'Pedro Oliveira', action: 'Criar ferramenta', timestamp: '2024-02-09 09:30:00', details: 'Criou o agente "Resumo Automático de Contratos"', resourceType: 'ferramenta', resourceName: 'Resumo Automático de Contratos', toolType: 'agente' },
+  { id: 'sys-007', user: 'Maria Santos', action: 'Editar ferramenta', timestamp: '2024-02-08 16:00:00', details: 'Editou o agente "Resumo Automático de Contratos" — ajustou parâmetros de temperatura', resourceType: 'ferramenta', resourceName: 'Resumo Automático de Contratos', toolType: 'agente' },
+  { id: 'sys-008', user: 'Fernanda Alves', action: 'Criar ferramenta', timestamp: '2024-02-07 08:45:00', details: 'Criou o template de API "Extrator de Dados RH"', resourceType: 'ferramenta', resourceName: 'Extrator de Dados RH', toolType: 'template_api' },
+  { id: 'sys-009', user: 'Roberto Lima', action: 'Excluir ferramenta', timestamp: '2024-02-06 15:30:00', details: 'Excluiu o conector "Parser de XML Legado" — funcionalidade descontinuada', resourceType: 'ferramenta', resourceName: 'Parser de XML Legado', toolType: 'conector' },
   { id: 'sys-010', user: 'João Silva', action: 'Criar esteira', timestamp: '2024-02-12 08:00:00', details: 'Criou a esteira "Onboarding de Fornecedores" com 5 etapas', resourceType: 'esteira', resourceName: 'Onboarding de Fornecedores' },
   { id: 'sys-011', user: 'João Silva', action: 'Editar esteira', timestamp: '2024-02-12 10:30:00', details: 'Editou a esteira "Onboarding de Fornecedores" — adicionou etapa "Validação Fiscal"', resourceType: 'esteira', resourceName: 'Onboarding de Fornecedores' },
   { id: 'sys-012', user: 'Ana Costa', action: 'Editar esteira', timestamp: '2024-02-11 11:00:00', details: 'Editou a esteira "Processamento de Notas Fiscais" — renomeou etapa "Conferência" para "Verificação Financeira"', resourceType: 'esteira', resourceName: 'Processamento de Notas Fiscais' },
@@ -299,18 +306,78 @@ const systemAuditEntries: SystemAuditEntry[] = [
   { id: 'sys-015', user: 'Ricardo Torres', action: 'Excluir esteira', timestamp: '2024-02-08 17:00:00', details: 'Excluiu a esteira "Fluxo Temporário de Auditoria" — processo finalizado', resourceType: 'esteira', resourceName: 'Fluxo Temporário de Auditoria' },
   { id: 'sys-016', user: 'Carlos Mendes', action: 'Criar esteira', timestamp: '2024-02-07 10:00:00', details: 'Criou a esteira "Admissão de Colaboradores" com 6 etapas', resourceType: 'esteira', resourceName: 'Admissão de Colaboradores' },
   { id: 'sys-017', user: 'Pedro Oliveira', action: 'Editar esteira', timestamp: '2024-02-06 16:45:00', details: 'Editou a esteira "Processamento de Notas Fiscais" — adicionou campo obrigatório na etapa de Recebimento', resourceType: 'esteira', resourceName: 'Processamento de Notas Fiscais' },
-  { id: 'sys-018', user: 'Luciana Melo', action: 'Criar ferramenta', timestamp: '2024-02-05 09:15:00', details: 'Criou a ferramenta "Validador de Atestados Médicos"', resourceType: 'ferramenta', resourceName: 'Validador de Atestados Médicos' },
+  { id: 'sys-018', user: 'Luciana Melo', action: 'Criar ferramenta', timestamp: '2024-02-05 09:15:00', details: 'Criou o questionário "Validador de Atestados Médicos"', resourceType: 'ferramenta', resourceName: 'Validador de Atestados Médicos', toolType: 'questionario' },
   { id: 'sys-019', user: 'Dr. Paulo Santos', action: 'Editar esteira', timestamp: '2024-02-04 14:30:00', details: 'Editou a esteira "Análise Jurídica de Contratos" — adicionou etapa "Parecer Técnico"', resourceType: 'esteira', resourceName: 'Análise Jurídica de Contratos' },
-  { id: 'sys-020', user: 'João Ferreira', action: 'Excluir ferramenta', timestamp: '2024-02-03 11:00:00', details: 'Excluiu a ferramenta "Gerador de Minutas v2" — migrada para nova versão', resourceType: 'ferramenta', resourceName: 'Gerador de Minutas v2' },
-  { id: 'sys-021', user: 'Ana Costa', action: 'Excluir ferramenta', timestamp: '2024-02-14 10:00:00', details: 'Excluiu a ferramenta "Extrator de Dados Legado" — substituída pela versão 3.0', resourceType: 'ferramenta', resourceName: 'Extrator de Dados Legado' },
+  { id: 'sys-020', user: 'João Ferreira', action: 'Excluir ferramenta', timestamp: '2024-02-03 11:00:00', details: 'Excluiu o template de API "Gerador de Minutas v2" — migrado para nova versão', resourceType: 'ferramenta', resourceName: 'Gerador de Minutas v2', toolType: 'template_api' },
+  { id: 'sys-021', user: 'Ana Costa', action: 'Excluir ferramenta', timestamp: '2024-02-14 10:00:00', details: 'Excluiu o conector "Extrator de Dados Legado" — substituído pela versão 3.0', resourceType: 'ferramenta', resourceName: 'Extrator de Dados Legado', toolType: 'conector' },
   { id: 'sys-022', user: 'Ana Costa', action: 'Criar esteira', timestamp: '2024-02-14 11:00:00', details: 'Criou a esteira "Conciliação Bancária Automática" com 4 etapas', resourceType: 'esteira', resourceName: 'Conciliação Bancária Automática' },
   { id: 'sys-023', user: 'Ana Costa', action: 'Excluir esteira', timestamp: '2024-02-14 17:30:00', details: 'Excluiu a esteira "Fluxo de Testes Financeiros" — processo piloto encerrado', resourceType: 'esteira', resourceName: 'Fluxo de Testes Financeiros' },
-  { id: 'sys-024', user: 'Dra. Mariana Costa', action: 'Criar ferramenta', timestamp: '2024-02-15 09:00:00', details: 'Criou a ferramenta "Analisador de Risco Contratual"', resourceType: 'ferramenta', resourceName: 'Analisador de Risco Contratual' },
-  { id: 'sys-025', user: 'Dra. Mariana Costa', action: 'Editar ferramenta', timestamp: '2024-02-15 10:30:00', details: 'Editou a ferramenta "Analisador de Risco Contratual" — adicionou cláusulas de rescisão ao modelo', resourceType: 'ferramenta', resourceName: 'Analisador de Risco Contratual' },
-  { id: 'sys-026', user: 'Dra. Mariana Costa', action: 'Excluir ferramenta', timestamp: '2024-02-15 14:00:00', details: 'Excluiu a ferramenta "Parser de Contratos v1" — descontinuada após migração', resourceType: 'ferramenta', resourceName: 'Parser de Contratos v1' },
+  { id: 'sys-024', user: 'Dra. Mariana Costa', action: 'Criar ferramenta', timestamp: '2024-02-15 09:00:00', details: 'Criou o agente "Analisador de Risco Contratual"', resourceType: 'ferramenta', resourceName: 'Analisador de Risco Contratual', toolType: 'agente' },
+  { id: 'sys-025', user: 'Dra. Mariana Costa', action: 'Editar ferramenta', timestamp: '2024-02-15 10:30:00', details: 'Editou o agente "Analisador de Risco Contratual" — adicionou cláusulas de rescisão ao modelo', resourceType: 'ferramenta', resourceName: 'Analisador de Risco Contratual', toolType: 'agente' },
+  { id: 'sys-026', user: 'Dra. Mariana Costa', action: 'Excluir ferramenta', timestamp: '2024-02-15 14:00:00', details: 'Excluiu o conector "Parser de Contratos v1" — descontinuado após migração', resourceType: 'ferramenta', resourceName: 'Parser de Contratos v1', toolType: 'conector' },
   { id: 'sys-027', user: 'Dra. Mariana Costa', action: 'Editar esteira', timestamp: '2024-02-15 15:30:00', details: 'Editou a esteira "Análise Jurídica de Contratos" — inseriu etapa de revisão obrigatória', resourceType: 'esteira', resourceName: 'Análise Jurídica de Contratos' },
   { id: 'sys-028', user: 'Dra. Mariana Costa', action: 'Excluir esteira', timestamp: '2024-02-15 17:00:00', details: 'Excluiu a esteira "Análise Jurídica Simplificada" — processo descontinuado por mudança regulatória', resourceType: 'esteira', resourceName: 'Análise Jurídica Simplificada' },
+  { id: 'sys-029', user: 'Carlos Silva', action: 'Criar ferramenta', timestamp: '2024-02-13 09:00:00', details: 'Criou o questionário "Formulário de Triagem Financeira"', resourceType: 'ferramenta', resourceName: 'Formulário de Triagem Financeira', toolType: 'questionario' },
+  { id: 'sys-030', user: 'Pedro Oliveira', action: 'Editar ferramenta', timestamp: '2024-02-13 11:30:00', details: 'Editou o template de API "Integração ERP Financeiro" — atualizou endpoint de consulta', resourceType: 'ferramenta', resourceName: 'Integração ERP Financeiro', toolType: 'template_api' },
+  { id: 'sys-031', user: 'Fernanda Alves', action: 'Criar ferramenta', timestamp: '2024-02-11 14:00:00', details: 'Criou o questionário "Checklist de Admissão"', resourceType: 'ferramenta', resourceName: 'Checklist de Admissão', toolType: 'questionario' },
+  { id: 'sys-032', user: 'João Ferreira', action: 'Criar ferramenta', timestamp: '2024-02-09 10:30:00', details: 'Criou o conector "API de Verificação Judicial"', resourceType: 'ferramenta', resourceName: 'API de Verificação Judicial', toolType: 'conector' },
+  { id: 'sys-033', user: 'João Silva', action: 'Clonar ferramenta agente', timestamp: '2024-02-16 09:00:00', details: 'Clonou o agente "Extrator de CNPJ" como "Extrator de CNPJ v2"', resourceType: 'ferramenta', resourceName: 'Extrator de CNPJ v2', toolType: 'agente' },
+  { id: 'sys-034', user: 'Ana Costa', action: 'Importar ferramenta agente', timestamp: '2024-02-16 10:30:00', details: 'Importou o agente "Analisador Fiscal" de repositório externo', resourceType: 'ferramenta', resourceName: 'Analisador Fiscal', toolType: 'agente' },
+  { id: 'sys-035', user: 'Pedro Oliveira', action: 'Testar ferramenta agente', timestamp: '2024-02-16 11:45:00', details: 'Testou o agente "Resumo Automático de Contratos" com documento de exemplo — resultado: 94% de precisão', resourceType: 'ferramenta', resourceName: 'Resumo Automático de Contratos', toolType: 'agente' },
+  { id: 'sys-036', user: 'Dra. Mariana Costa', action: 'Clonar ferramenta agente', timestamp: '2024-02-16 14:00:00', details: 'Clonou o agente "Analisador de Risco Contratual" como "Analisador de Risco v2"', resourceType: 'ferramenta', resourceName: 'Analisador de Risco v2', toolType: 'agente' },
+  { id: 'sys-037', user: 'Carlos Silva', action: 'Testar ferramenta agente', timestamp: '2024-02-16 15:30:00', details: 'Testou o agente "Classificador de Documentos" — validação de 120 documentos com taxa de acerto de 97%', resourceType: 'ferramenta', resourceName: 'Classificador de Documentos', toolType: 'agente' },
+  { id: 'sys-038', user: 'João Ferreira', action: 'Importar ferramenta agente', timestamp: '2024-02-16 16:00:00', details: 'Importou o agente "Validador de Cláusulas Jurídicas" de biblioteca compartilhada', resourceType: 'ferramenta', resourceName: 'Validador de Cláusulas Jurídicas', toolType: 'agente' },
+  { id: 'sys-039', user: 'Luciana Melo', action: 'Testar ferramenta agente', timestamp: '2024-02-17 09:15:00', details: 'Testou o agente "Validador de Atestados Médicos" com lote de 30 atestados — 0 falsos positivos', resourceType: 'ferramenta', resourceName: 'Validador de Atestados Médicos', toolType: 'agente' },
+  { id: 'sys-040', user: 'Fernanda Alves', action: 'Clonar ferramenta agente', timestamp: '2024-02-17 10:00:00', details: 'Clonou o agente "Classificador de Documentos" como base para "Classificador RH"', resourceType: 'ferramenta', resourceName: 'Classificador RH', toolType: 'agente' },
+  { id: 'sys-041', user: 'Ana Costa', action: 'Clonar ferramenta agente', timestamp: '2024-02-17 11:00:00', details: 'Clonou o agente "Extrator de CNPJ" como "Extrator de CNPJ — Fornecedores"', resourceType: 'ferramenta', resourceName: 'Extrator de CNPJ — Fornecedores', toolType: 'agente' },
+  { id: 'sys-042', user: 'Ana Costa', action: 'Testar ferramenta agente', timestamp: '2024-02-17 14:30:00', details: 'Testou o agente "Classificador de Documentos" com lote de 50 notas fiscais — precisão de 98%', resourceType: 'ferramenta', resourceName: 'Classificador de Documentos', toolType: 'agente' },
+  { id: 'sys-043', user: 'Dra. Mariana Costa', action: 'Importar ferramenta agente', timestamp: '2024-02-17 09:00:00', details: 'Importou o agente "Revisor de Contratos LGPD" de repositório jurídico compartilhado', resourceType: 'ferramenta', resourceName: 'Revisor de Contratos LGPD', toolType: 'agente' },
+  { id: 'sys-044', user: 'Dra. Mariana Costa', action: 'Testar ferramenta agente', timestamp: '2024-02-17 16:00:00', details: 'Testou o agente "Analisador de Risco v2" com 15 contratos modelo — 0 falsos negativos', resourceType: 'ferramenta', resourceName: 'Analisador de Risco v2', toolType: 'agente' },
 ];
+
+// ============================================================
+// HELPER - Tool type metadata
+// ============================================================
+const TOOL_TYPE_META: Record<ToolType, {
+  label: string;
+  badgeClass: string;
+  iconBg: string;
+  iconColor: string;
+}> = {
+  agente: {
+    label: 'Agente',
+    badgeClass: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
+    iconBg: 'bg-violet-100 dark:bg-violet-900/30',
+    iconColor: 'text-violet-600 dark:text-violet-400',
+  },
+  conector: {
+    label: 'Conector',
+    badgeClass: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+    iconBg: 'bg-sky-100 dark:bg-sky-900/30',
+    iconColor: 'text-sky-600 dark:text-sky-400',
+  },
+  template_api: {
+    label: 'Template de API',
+    badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+    iconBg: 'bg-amber-100 dark:bg-amber-900/30',
+    iconColor: 'text-amber-600 dark:text-amber-400',
+  },
+  questionario: {
+    label: 'Questionário',
+    badgeClass: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
+    iconBg: 'bg-rose-100 dark:bg-rose-900/30',
+    iconColor: 'text-rose-600 dark:text-rose-400',
+  },
+};
+
+function ToolTypeIcon({ type, className }: { type: ToolType; className?: string }) {
+  switch (type) {
+    case 'agente': return <Bot className={className} />;
+    case 'conector': return <Plug className={className} />;
+    case 'template_api': return <FileCode2 className={className} />;
+    case 'questionario': return <ClipboardList className={className} />;
+  }
+}
 
 // ============================================================
 // HELPER - Shared action badge styles
@@ -332,6 +399,9 @@ const getActionBadgeClass = (action: string) => {
     case 'Editar esteira': return 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300';
     case 'Excluir esteira': return 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300';
     case 'Anonimizar': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300';
+    case 'Clonar ferramenta agente': return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300';
+    case 'Importar ferramenta agente': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300';
+    case 'Testar ferramenta agente': return 'bg-lime-100 text-lime-700 dark:bg-lime-900/40 dark:text-lime-300';
     default: return 'bg-gray-100 text-gray-700 dark:bg-gray-700/40 dark:text-gray-300';
   }
 };
@@ -1151,6 +1221,110 @@ function WorkflowAuditTab() {
 }
 
 // ============================================================
+// COMPONENT: SearchableSelect — dropdown with search + alphabetical sort
+// ============================================================
+function SearchableSelect({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [dropdownMaxHeight, setDropdownMaxHeight] = useState(400);
+  const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setSearch('');
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Compute available vertical space below the trigger button whenever it opens
+  useEffect(() => {
+    if (open && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const available = window.innerHeight - rect.bottom - 10;
+      setDropdownMaxHeight(Math.max(140, available));
+    }
+  }, [open]);
+
+  const allOption = options.find(o => o.value === 'all');
+  const restOptions = options.filter(o => o.value !== 'all');
+  const sorted = [...restOptions].sort((a, b) =>
+    a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' })
+  );
+  const filtered = search
+    ? sorted.filter(o => o.label.toLowerCase().includes(search.toLowerCase()))
+    : sorted;
+  const displayOptions = allOption ? [allOption, ...filtered] : filtered;
+  const selectedLabel = options.find(o => o.value === value)?.label ?? 'Selecionar...';
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-1.5 text-xs border border-woopi-ai-border rounded-md px-2 py-1.5 bg-white dark:bg-[#292f4c] dark:text-[#d5d8e0] hover:bg-gray-50 dark:hover:bg-[#2d3354] transition-colors min-w-[180px] max-w-[260px] justify-between"
+      >
+        <span className="truncate">{selectedLabel}</span>
+        <ChevronDown className={`w-3 h-3 text-woopi-ai-gray flex-shrink-0 transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div
+          className="absolute z-50 top-full mt-1 right-0 bg-white dark:bg-[#292f4c] border border-woopi-ai-border rounded-lg shadow-xl w-max max-w-[360px] flex flex-col overflow-hidden"
+          style={{ maxHeight: dropdownMaxHeight }}
+        >
+          <div className="p-2 border-b border-woopi-ai-border flex-shrink-0">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-woopi-ai-gray pointer-events-none" />
+              <input
+                autoFocus
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Buscar ação..."
+                className="w-full pl-6 pr-2 py-1 text-xs border border-woopi-ai-border rounded-md bg-white dark:bg-[#1f2132] dark:text-[#d5d8e0] focus:outline-none focus:ring-1 focus:ring-[#0073ea]/30 focus:border-[#0073ea]"
+              />
+            </div>
+          </div>
+          <div className="overflow-y-auto flex-1 py-1">
+            {displayOptions.length > 0 ? (
+              displayOptions.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => { onChange(opt.value); setOpen(false); setSearch(''); }}
+                  className={`w-full text-left px-3 py-1.5 text-xs whitespace-nowrap transition-colors ${
+                    value === opt.value
+                      ? 'text-[#0073ea] font-semibold bg-blue-50 dark:bg-blue-900/20'
+                      : 'text-woopi-ai-dark-gray dark:text-[#d5d8e0] hover:bg-gray-50 dark:hover:bg-[#2d3354]'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))
+            ) : (
+              <p className="text-xs text-woopi-ai-gray px-3 py-3 text-center whitespace-nowrap">Nenhuma ação encontrada</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
 // TAB: Usuários
 // ============================================================
 const userTeamsMap: Record<string, string[]> = {
@@ -1193,9 +1367,11 @@ function UsersAuditTab() {
         stage?: string;
         resourceType?: 'ferramenta' | 'esteira';
         resourceName?: string;
+        toolType?: ToolType;
       }[];
       workflows: Set<string>;
       actionCounts: Record<string, number>;
+      toolTypeCounts: Partial<Record<ToolType, number>>;
     }> = {};
 
     const ensureUser = (name: string) => {
@@ -1205,7 +1381,8 @@ function UsersAuditTab() {
           teams: userTeamsMap[name] || ['Sem time'],
           events: [],
           workflows: new Set(),
-          actionCounts: {}
+          actionCounts: {},
+          toolTypeCounts: {}
         };
       }
       return userMap[name];
@@ -1242,9 +1419,13 @@ function UsersAuditTab() {
         docName: entry.resourceName,
         workflow: entry.resourceType === 'ferramenta' ? 'Ferramentas' : 'Esteiras',
         resourceType: entry.resourceType,
-        resourceName: entry.resourceName
+        resourceName: entry.resourceName,
+        toolType: entry.toolType
       });
       u.actionCounts[entry.action] = (u.actionCounts[entry.action] || 0) + 1;
+      if (entry.toolType) {
+        u.toolTypeCounts[entry.toolType] = (u.toolTypeCounts[entry.toolType] || 0) + 1;
+      }
     });
 
     Object.values(userMap).forEach(u => {
@@ -1364,12 +1545,28 @@ function UsersAuditTab() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 mb-1.5 ml-9 flex-wrap">
-                      {Array.from(u.workflows).map(wf => (
+                      {Array.from(u.workflows).filter(wf => wf !== 'Ferramentas' && wf !== 'Esteiras').map(wf => (
                         <Badge key={wf} className="bg-[#0073ea]/10 text-[#0073ea] text-[10px] px-1.5 py-0 font-normal">
                           {wf.length > 20 ? wf.substring(0, 20) + '...' : wf}
                         </Badge>
                       ))}
                     </div>
+                    {Object.keys(u.toolTypeCounts).length > 0 && (
+                      <div className="flex items-center gap-1 ml-9 flex-wrap mb-1.5">
+                        {(Object.entries(u.toolTypeCounts) as [ToolType, number][]).map(([type, count]) => {
+                          const meta = TOOL_TYPE_META[type];
+                          return (
+                            <span
+                              key={type}
+                              className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${meta.badgeClass}`}
+                            >
+                              <ToolTypeIcon type={type} className="w-2.5 h-2.5" />
+                              {meta.label}: {count}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
                     <div className="flex items-center gap-3 text-xs text-woopi-ai-gray ml-9">
                       <span className="flex items-center gap-1">
                         <Activity className="w-3 h-3" />
@@ -1377,7 +1574,8 @@ function UsersAuditTab() {
                       </span>
                       <span className="flex items-center gap-1">
                         <Workflow className="w-3 h-3" />
-                        {u.workflows.size} {u.workflows.size === 1 ? 'esteira' : 'esteiras'}
+                        {Array.from(u.workflows).filter(wf => wf !== 'Ferramentas' && wf !== 'Esteiras').length}{' '}
+                        {Array.from(u.workflows).filter(wf => wf !== 'Ferramentas' && wf !== 'Esteiras').length === 1 ? 'esteira' : 'esteiras'}
                       </span>
                     </div>
                   </button>
@@ -1413,11 +1611,20 @@ function UsersAuditTab() {
                       ))}
                     </div>
                     <div className="flex flex-wrap items-center gap-2 mt-1">
-                      {Array.from(selectedUserData.workflows).map(wf => (
+                      {Array.from(selectedUserData.workflows).filter(wf => wf !== 'Ferramentas' && wf !== 'Esteiras').map(wf => (
                         <Badge key={wf} className="bg-[#0073ea]/10 text-[#0073ea] text-xs px-2 py-0.5 font-normal">
                           {wf}
                         </Badge>
                       ))}
+                      {(Object.entries(selectedUserData.toolTypeCounts) as [ToolType, number][]).map(([type, count]) => {
+                        const meta = TOOL_TYPE_META[type];
+                        return (
+                          <span key={type} className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${meta.badgeClass}`}>
+                            <ToolTypeIcon type={type} className="w-3 h-3" />
+                            {meta.label} ({count})
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -1469,16 +1676,16 @@ function UsersAuditTab() {
                       </button>
                       <div className="flex items-center gap-1.5">
                         <Filter className="w-3.5 h-3.5 text-woopi-ai-gray" />
-                        <select
+                        <SearchableSelect
                           value={actionFilter}
-                          onChange={(e) => setActionFilter(e.target.value)}
-                          className="text-xs border border-woopi-ai-border rounded-md px-2 py-1.5 bg-white dark:bg-[#292f4c] dark:text-[#d5d8e0]"
-                        >
-                          <option value="all">Todas as ações</option>
-                          {Object.keys(selectedUserData.actionCounts).map(a => (
-                            <option key={a} value={a}>{a}</option>
-                          ))}
-                        </select>
+                          onChange={setActionFilter}
+                          options={[
+                            { value: 'all', label: 'Todas as ações' },
+                            ...Object.keys(selectedUserData.actionCounts)
+                              .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }))
+                              .map(a => ({ value: a, label: a })),
+                          ]}
+                        />
                       </div>
                     </div>
                   </div>
@@ -1499,15 +1706,28 @@ function UsersAuditTab() {
                   {filteredEvents.length > 0 ? (
                     filteredEvents.map((event) => {
                       const isSystem = !!event.resourceType;
-                      const IconComp = isSystem
-                        ? (event.resourceType === 'ferramenta' ? Wrench : Settings2)
-                        : FileText;
-                      const iconColor = isSystem
-                        ? (event.resourceType === 'ferramenta' ? 'text-teal-600 dark:text-teal-400' : 'text-indigo-600 dark:text-indigo-400')
-                        : 'text-woopi-ai-blue';
-                      const iconBg = isSystem
-                        ? (event.resourceType === 'ferramenta' ? 'bg-teal-100 dark:bg-teal-900/30' : 'bg-indigo-100 dark:bg-indigo-900/30')
-                        : 'bg-woopi-ai-blue/10';
+                      const isTool = isSystem && event.resourceType === 'ferramenta';
+                      const isEsteira = isSystem && event.resourceType === 'esteira';
+                      const toolMeta = isTool && event.toolType ? TOOL_TYPE_META[event.toolType] : null;
+
+                      let iconBg: string;
+                      let iconColor: string;
+                      let iconNode: React.ReactNode;
+
+                      if (toolMeta && event.toolType) {
+                        iconBg = toolMeta.iconBg;
+                        iconColor = toolMeta.iconColor;
+                        iconNode = <ToolTypeIcon type={event.toolType} className={`w-3.5 h-3.5 ${iconColor}`} />;
+                      } else if (isEsteira) {
+                        iconBg = 'bg-indigo-100 dark:bg-indigo-900/30';
+                        iconColor = 'text-indigo-600 dark:text-indigo-400';
+                        iconNode = <Settings2 className={`w-3.5 h-3.5 ${iconColor}`} />;
+                      } else {
+                        iconBg = 'bg-woopi-ai-blue/10';
+                        iconColor = 'text-woopi-ai-blue';
+                        iconNode = <FileText className={`w-3.5 h-3.5 ${iconColor}`} />;
+                      }
+
                       return (
                         <div
                           key={event.id}
@@ -1515,17 +1735,24 @@ function UsersAuditTab() {
                         >
                           <div className="flex items-start gap-3">
                             <div className={`w-7 h-7 rounded-full ${iconBg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                              <IconComp className={`w-3.5 h-3.5 ${iconColor}`} />
+                              {iconNode}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <div className="flex flex-wrap items-center gap-1.5 mb-1">
                                 <span className="font-medium text-sm text-[#0073ea]">{event.docName}</span>
                                 <Badge className={`${getActionBadgeClass(event.action)} text-[10px] px-1.5 py-0`}>
                                   {event.action}
                                 </Badge>
-                                {isSystem && (
-                                  <Badge className="bg-gray-100 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400 text-[10px] px-1.5 py-0 font-normal">
-                                    {event.resourceType === 'ferramenta' ? 'Ferramenta' : 'Esteira'}
+                                {toolMeta && event.toolType && (
+                                  <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${toolMeta.badgeClass}`}>
+                                    <ToolTypeIcon type={event.toolType} className="w-2.5 h-2.5" />
+                                    {toolMeta.label}
+                                  </span>
+                                )}
+                                {isEsteira && (
+                                  <Badge className="bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300 text-[10px] px-1.5 py-0 font-normal flex items-center gap-0.5">
+                                    <Workflow className="w-2.5 h-2.5" />
+                                    Esteira
                                   </Badge>
                                 )}
                               </div>
