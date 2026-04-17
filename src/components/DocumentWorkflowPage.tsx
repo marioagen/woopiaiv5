@@ -54,7 +54,8 @@ const initialTeamWorkflows = {
           uploadDate: '2024-12-15',
           status: 'Aguardando análise',
           solicitante: 'Paula Mendes',
-          responsavel: 'Ana Costa'
+          responsavel: 'Ana Costa',
+          isAnonymized: true
         },
         {
           id: '#8023',
@@ -72,7 +73,8 @@ const initialTeamWorkflows = {
           uploadDate: '2024-12-14',
           status: 'Aguardando análise',
           solicitante: 'Fernando Lima',
-          responsavel: 'Pedro Oliveira'
+          responsavel: 'Pedro Oliveira',
+          isAnonymized: true
         },
         {
           id: '#8025',
@@ -99,7 +101,8 @@ const initialTeamWorkflows = {
           uploadDate: '2024-12-13',
           status: 'Aguardando análise',
           solicitante: 'Beatriz Alves',
-          responsavel: 'Ana Costa'
+          responsavel: 'Ana Costa',
+          isAnonymized: true
         },
         {
           id: '#8028',
@@ -1384,7 +1387,7 @@ export function DocumentWorkflowPage() {
                       <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[130px]">Status</TableHead>
                       <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[140px]">Solicitante</TableHead>
                       <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[140px]">Responsável</TableHead>
-                      <TableHead className="text-xs font-semibold text-woopi-ai-gray w-14 text-right">Ações</TableHead>
+                      <TableHead className="text-xs font-semibold text-woopi-ai-gray text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1431,7 +1434,18 @@ export function DocumentWorkflowPage() {
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">{doc.solicitante}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{doc.responsavel}</TableCell>
-                          <TableCell className="text-right w-14">
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {(doc as any).isAnonymized && (
+                                <button
+                                  type="button"
+                                  onClick={() => window.open(`/documentos/${doc.id.replace('#', '')}/anonimizado`, '_blank')}
+                                  className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200 hover:text-gray-700 transition-colors dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-300 cursor-pointer whitespace-nowrap"
+                                  title="Ver documento anonimizado em nova aba"
+                                >
+                                  Anonimizado
+                                </button>
+                              )}
                             {!isFinalized && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -1480,6 +1494,7 @@ export function DocumentWorkflowPage() {
                             {isFinalized && (
                               <span className="text-xs text-green-600 font-medium">✓ Finalizado</span>
                             )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
