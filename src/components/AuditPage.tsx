@@ -29,7 +29,7 @@ import {
   Bot,
   Plug,
   FileCode2,
-  ClipboardList
+  ClipboardList,
 } from 'lucide-react';
 import { Separator } from './ui/separator';
 
@@ -742,6 +742,7 @@ function DocumentsAuditTab() {
                         className="text-xs border border-woopi-ai-border rounded-md px-2 py-1.5 bg-white dark:bg-[#292f4c] dark:text-[#d5d8e0]"
                       >
                         <option value="all">Todas as ações</option>
+                        <option value="Anonimizar">Anonimizar</option>
                         <option value="Upload">Upload</option>
                         <option value="Atribuir">Atribuir</option>
                         <option value="Avançar">Avançar</option>
