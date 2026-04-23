@@ -333,6 +333,19 @@ const systemAuditEntries: SystemAuditEntry[] = [
   { id: 'sys-042', user: 'Ana Costa', action: 'Testar ferramenta agente', timestamp: '2024-02-17 14:30:00', details: 'Testou o agente "Classificador de Documentos" com lote de 50 notas fiscais — precisão de 98%', resourceType: 'ferramenta', resourceName: 'Classificador de Documentos', toolType: 'agente' },
   { id: 'sys-043', user: 'Dra. Mariana Costa', action: 'Importar ferramenta agente', timestamp: '2024-02-17 09:00:00', details: 'Importou o agente "Revisor de Contratos LGPD" de repositório jurídico compartilhado', resourceType: 'ferramenta', resourceName: 'Revisor de Contratos LGPD', toolType: 'agente' },
   { id: 'sys-044', user: 'Dra. Mariana Costa', action: 'Testar ferramenta agente', timestamp: '2024-02-17 16:00:00', details: 'Testou o agente "Analisador de Risco v2" com 15 contratos modelo — 0 falsos negativos', resourceType: 'ferramenta', resourceName: 'Analisador de Risco v2', toolType: 'agente' },
+  // Dra. Mariana Costa — Conectores
+  { id: 'sys-045', user: 'Dra. Mariana Costa', action: 'Criar ferramenta', timestamp: '2024-02-13 14:00:00', details: 'Criou o conector "Integração Tribunal de Justiça SP" para consulta automatizada de processos', resourceType: 'ferramenta', resourceName: 'Integração Tribunal de Justiça SP', toolType: 'conector' },
+  { id: 'sys-046', user: 'Dra. Mariana Costa', action: 'Editar ferramenta', timestamp: '2024-02-13 15:45:00', details: 'Editou o conector "Integração Tribunal de Justiça SP" — adicionou autenticação OAuth2 e retry automático', resourceType: 'ferramenta', resourceName: 'Integração Tribunal de Justiça SP', toolType: 'conector' },
+  { id: 'sys-047', user: 'Dra. Mariana Costa', action: 'Criar ferramenta', timestamp: '2024-02-18 09:30:00', details: 'Criou o conector "Parser de Diário Oficial" para extração de publicações jurídicas relevantes', resourceType: 'ferramenta', resourceName: 'Parser de Diário Oficial', toolType: 'conector' },
+  // Dra. Mariana Costa — Templates de API
+  { id: 'sys-048', user: 'Dra. Mariana Costa', action: 'Criar ferramenta', timestamp: '2024-02-14 10:00:00', details: 'Criou o template de API "Gerador de Pareceres Jurídicos" com campos de risco, recomendação e prazo', resourceType: 'ferramenta', resourceName: 'Gerador de Pareceres Jurídicos', toolType: 'template_api' },
+  { id: 'sys-049', user: 'Dra. Mariana Costa', action: 'Editar ferramenta', timestamp: '2024-02-14 11:20:00', details: 'Editou o template de API "Gerador de Pareceres Jurídicos" — incluiu campo obrigatório "Fundamentação Legal"', resourceType: 'ferramenta', resourceName: 'Gerador de Pareceres Jurídicos', toolType: 'template_api' },
+  { id: 'sys-050', user: 'Dra. Mariana Costa', action: 'Criar ferramenta', timestamp: '2024-02-18 11:00:00', details: 'Criou o template de API "Extrator de Cláusulas Contratuais" para uso em esteiras de revisão', resourceType: 'ferramenta', resourceName: 'Extrator de Cláusulas Contratuais', toolType: 'template_api' },
+  { id: 'sys-051', user: 'Dra. Mariana Costa', action: 'Excluir ferramenta', timestamp: '2024-02-18 14:30:00', details: 'Excluiu o template de API "Relatório de Due Diligence v1" — substituído pela versão 2.0 com campos LGPD', resourceType: 'ferramenta', resourceName: 'Relatório de Due Diligence v1', toolType: 'template_api' },
+  // Dra. Mariana Costa — Questionários
+  { id: 'sys-052', user: 'Dra. Mariana Costa', action: 'Criar ferramenta', timestamp: '2024-02-11 08:45:00', details: 'Criou o questionário "Triagem de Risco Contratual" com 18 perguntas de due diligence', resourceType: 'ferramenta', resourceName: 'Triagem de Risco Contratual', toolType: 'questionario' },
+  { id: 'sys-053', user: 'Dra. Mariana Costa', action: 'Editar ferramenta', timestamp: '2024-02-11 10:15:00', details: 'Editou o questionário "Triagem de Risco Contratual" — adicionou seção de cláusulas LGPD e penalidades', resourceType: 'ferramenta', resourceName: 'Triagem de Risco Contratual', toolType: 'questionario' },
+  { id: 'sys-054', user: 'Dra. Mariana Costa', action: 'Criar ferramenta', timestamp: '2024-02-18 16:00:00', details: 'Criou o questionário "Checklist de Conformidade Regulatória" para auditorias internas semestrais', resourceType: 'ferramenta', resourceName: 'Checklist de Conformidade Regulatória', toolType: 'questionario' },
 ];
 
 // ============================================================
@@ -1351,6 +1364,14 @@ function UsersAuditTab() {
   const [teamFilter, setTeamFilter] = useState<string>('all');
   const [eventSortOrder, setEventSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [eventSearch, setEventSearch] = useState('');
+  const [toolCategoryFilter, setToolCategoryFilter] = useState<'all' | ToolType>('all');
+
+  // Reset per-user filters when switching users
+  useEffect(() => {
+    setActionFilter('all');
+    setToolCategoryFilter('all');
+    setEventSearch('');
+  }, [selectedUser]);
 
   // Aggregate user data from all documents + system actions
   const usersData = useMemo(() => {
@@ -1453,25 +1474,43 @@ function UsersAuditTab() {
     ? usersData.find(u => u.name === selectedUser)
     : null;
 
+  // Action options scoped to the active tool category pill
+  const availableActionOptions = useMemo(() => {
+    if (!selectedUserData) return [];
+    const eventsInCategory = toolCategoryFilter === 'all'
+      ? selectedUserData.events
+      : selectedUserData.events.filter(e => e.toolType === toolCategoryFilter);
+    const actionSet = new Set(eventsInCategory.map(e => e.action));
+    return Array.from(actionSet).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+  }, [selectedUserData, toolCategoryFilter]);
+
+  // Reset action filter when its value no longer exists in the narrowed options
+  useEffect(() => {
+    if (actionFilter !== 'all' && !availableActionOptions.includes(actionFilter)) {
+      setActionFilter('all');
+    }
+  }, [availableActionOptions, actionFilter]);
+
   const filteredEvents = useMemo(() => {
     if (!selectedUserData) return [];
     const searchLower = eventSearch.toLowerCase();
     const filtered = selectedUserData.events.filter(e => {
       const matchesAction = actionFilter === 'all' || e.action === actionFilter;
+      const matchesToolCategory = toolCategoryFilter === 'all' || e.toolType === toolCategoryFilter;
       const matchesSearch = !eventSearch || 
         e.docName.toLowerCase().includes(searchLower) ||
         e.details.toLowerCase().includes(searchLower) ||
         e.workflow.toLowerCase().includes(searchLower) ||
         e.action.toLowerCase().includes(searchLower) ||
         (e.stage && e.stage.toLowerCase().includes(searchLower));
-      return matchesAction && matchesSearch;
+      return matchesAction && matchesToolCategory && matchesSearch;
     });
     return filtered.sort((a, b) => {
       return eventSortOrder === 'newest'
         ? b.timestamp.localeCompare(a.timestamp)
         : a.timestamp.localeCompare(b.timestamp);
     });
-  }, [selectedUserData, actionFilter, eventSearch, eventSortOrder]);
+  }, [selectedUserData, actionFilter, toolCategoryFilter, eventSearch, eventSortOrder]);
 
   // Top 3 actions for a user
   const getTopActions = (actionCounts: Record<string, number>) => {
@@ -1682,14 +1721,61 @@ function UsersAuditTab() {
                           onChange={setActionFilter}
                           options={[
                             { value: 'all', label: 'Todas as ações' },
-                            ...Object.keys(selectedUserData.actionCounts)
-                              .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }))
-                              .map(a => ({ value: a, label: a })),
+                            ...availableActionOptions.map(a => ({ value: a, label: a })),
                           ]}
                         />
                       </div>
                     </div>
                   </div>
+                  {/* Tool category pills */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {/* "Todas" pill */}
+                    <button
+                      onClick={() => setToolCategoryFilter('all')}
+                      className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium border transition-all ${
+                        toolCategoryFilter === 'all'
+                          ? 'bg-[#0073ea] text-white border-[#0073ea] shadow-sm'
+                          : 'bg-white dark:bg-[#292f4c] text-woopi-ai-gray border-woopi-ai-border hover:border-[#0073ea]/40 hover:text-[#0073ea]'
+                      }`}
+                    >
+                      Todas
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full leading-none ${
+                        toolCategoryFilter === 'all'
+                          ? 'bg-white/25 text-white'
+                          : 'bg-gray-100 dark:bg-[#3a4068] text-woopi-ai-gray'
+                      }`}>
+                        {selectedUserData.events.length}
+                      </span>
+                    </button>
+
+                    {(Object.entries(TOOL_TYPE_META) as [ToolType, typeof TOOL_TYPE_META[ToolType]][]).map(([type, meta]) => {
+                      const count = selectedUserData.toolTypeCounts[type] ?? 0;
+                      if (count === 0) return null;
+                      const isActive = toolCategoryFilter === type;
+                      return (
+                        <button
+                          key={type}
+                          onClick={() => setToolCategoryFilter(isActive ? 'all' : type)}
+                          className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium border transition-all ${
+                            isActive
+                              ? `${meta.badgeClass} border-transparent shadow-sm`
+                              : 'bg-white dark:bg-[#292f4c] text-woopi-ai-gray border-woopi-ai-border hover:border-current'
+                          }`}
+                        >
+                          <ToolTypeIcon type={type} className={`w-3 h-3 ${isActive ? 'opacity-90' : meta.iconColor}`} />
+                          {meta.label}
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full leading-none ${
+                            isActive
+                              ? 'bg-black/10 dark:bg-black/20'
+                              : 'bg-gray-100 dark:bg-[#3a4068] text-woopi-ai-gray'
+                          }`}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-woopi-ai-gray" />
                     <Input
