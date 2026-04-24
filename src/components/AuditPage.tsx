@@ -277,6 +277,19 @@ const workflowsAuditData: WorkflowAuditData[] = [
 // ============================================================
 type ToolType = 'agente' | 'conector' | 'template_api' | 'questionario';
 
+const DOC_ACTIONS = [
+  'Anonimizar',
+  'Atribuir',
+  'Avançar',
+  'Deletar',
+  'Finalizar',
+  'Perguntar ao documento',
+  'Reprovar',
+  'Upload',
+] as const;
+
+type DocAction = typeof DOC_ACTIONS[number];
+
 interface SystemAuditEntry {
   id: string;
   user: string;
@@ -1365,11 +1378,13 @@ function UsersAuditTab() {
   const [eventSortOrder, setEventSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [eventSearch, setEventSearch] = useState('');
   const [toolCategoryFilter, setToolCategoryFilter] = useState<'all' | ToolType>('all');
+  const [docActionFilter, setDocActionFilter] = useState<'all' | 'doc'>('all');
 
   // Reset per-user filters when switching users
   useEffect(() => {
     setActionFilter('all');
     setToolCategoryFilter('all');
+    setDocActionFilter('all');
     setEventSearch('');
   }, [selectedUser]);
 
@@ -1474,15 +1489,15 @@ function UsersAuditTab() {
     ? usersData.find(u => u.name === selectedUser)
     : null;
 
-  // Action options scoped to the active tool category pill
+  // Action options scoped to the active tool category pill and doc action pill
   const availableActionOptions = useMemo(() => {
     if (!selectedUserData) return [];
-    const eventsInCategory = toolCategoryFilter === 'all'
-      ? selectedUserData.events
-      : selectedUserData.events.filter(e => e.toolType === toolCategoryFilter);
-    const actionSet = new Set(eventsInCategory.map(e => e.action));
+    let events = selectedUserData.events;
+    if (toolCategoryFilter !== 'all') events = events.filter(e => e.toolType === toolCategoryFilter);
+    if (docActionFilter === 'doc') events = events.filter(e => (DOC_ACTIONS as readonly string[]).includes(e.action));
+    const actionSet = new Set(events.map(e => e.action));
     return Array.from(actionSet).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
-  }, [selectedUserData, toolCategoryFilter]);
+  }, [selectedUserData, toolCategoryFilter, docActionFilter]);
 
   // Reset action filter when its value no longer exists in the narrowed options
   useEffect(() => {
@@ -1491,26 +1506,36 @@ function UsersAuditTab() {
     }
   }, [availableActionOptions, actionFilter]);
 
+  // Total count of doc-action events for the selected user (scoped to tool category filter)
+  const docActionCount = useMemo(() => {
+    if (!selectedUserData) return 0;
+    const events = toolCategoryFilter === 'all'
+      ? selectedUserData.events
+      : selectedUserData.events.filter(e => e.toolType === toolCategoryFilter);
+    return events.filter(e => (DOC_ACTIONS as readonly string[]).includes(e.action)).length;
+  }, [selectedUserData, toolCategoryFilter]);
+
   const filteredEvents = useMemo(() => {
     if (!selectedUserData) return [];
     const searchLower = eventSearch.toLowerCase();
     const filtered = selectedUserData.events.filter(e => {
       const matchesAction = actionFilter === 'all' || e.action === actionFilter;
       const matchesToolCategory = toolCategoryFilter === 'all' || e.toolType === toolCategoryFilter;
+      const matchesDocAction = docActionFilter === 'all' || (DOC_ACTIONS as readonly string[]).includes(e.action);
       const matchesSearch = !eventSearch || 
         e.docName.toLowerCase().includes(searchLower) ||
         e.details.toLowerCase().includes(searchLower) ||
         e.workflow.toLowerCase().includes(searchLower) ||
         e.action.toLowerCase().includes(searchLower) ||
         (e.stage && e.stage.toLowerCase().includes(searchLower));
-      return matchesAction && matchesToolCategory && matchesSearch;
+      return matchesAction && matchesToolCategory && matchesDocAction && matchesSearch;
     });
     return filtered.sort((a, b) => {
       return eventSortOrder === 'newest'
         ? b.timestamp.localeCompare(a.timestamp)
         : a.timestamp.localeCompare(b.timestamp);
     });
-  }, [selectedUserData, actionFilter, toolCategoryFilter, eventSearch, eventSortOrder]);
+  }, [selectedUserData, actionFilter, toolCategoryFilter, docActionFilter, eventSearch, eventSortOrder]);
 
   // Top 3 actions for a user
   const getTopActions = (actionCounts: Record<string, number>) => {
@@ -1727,9 +1752,9 @@ function UsersAuditTab() {
                       </div>
                     </div>
                   </div>
-                  {/* Tool category pills */}
+                  {/* Filter pills — tool categories + document action toggle */}
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    {/* "Todas" pill */}
+                    {/* "Todas" pill — always first */}
                     <button
                       onClick={() => setToolCategoryFilter('all')}
                       className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium border transition-all ${
@@ -1747,6 +1772,31 @@ function UsersAuditTab() {
                         {selectedUserData.events.length}
                       </span>
                     </button>
+
+                    {/* Document action pill — second, right after Todas */}
+                    {docActionCount > 0 && (
+                      <>
+                        <button
+                          onClick={() => setDocActionFilter(prev => prev === 'doc' ? 'all' : 'doc')}
+                          className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium border transition-all ${
+                            docActionFilter === 'doc'
+                              ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                              : 'bg-white dark:bg-[#292f4c] text-woopi-ai-gray border-woopi-ai-border hover:border-amber-400/60 hover:text-amber-600 dark:hover:text-amber-400'
+                          }`}
+                        >
+                          <FileText className={`w-3 h-3 ${docActionFilter === 'doc' ? 'text-white' : 'text-amber-500'}`} />
+                          Ações com documento
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full leading-none ${
+                            docActionFilter === 'doc'
+                              ? 'bg-black/10 dark:bg-black/20'
+                              : 'bg-gray-100 dark:bg-[#3a4068] text-woopi-ai-gray'
+                          }`}>
+                            {docActionCount}
+                          </span>
+                        </button>
+                        <span className="w-px h-4 bg-woopi-ai-border self-center" />
+                      </>
+                    )}
 
                     {(Object.entries(TOOL_TYPE_META) as [ToolType, typeof TOOL_TYPE_META[ToolType]][]).map(([type, meta]) => {
                       const count = selectedUserData.toolTypeCounts[type] ?? 0;
