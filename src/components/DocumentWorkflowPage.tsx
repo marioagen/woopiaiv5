@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -14,7 +14,7 @@ import { Input } from './ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { Checkbox } from './ui/checkbox';
-import { Workflow, Clock, FileText, Calendar, ChevronRight, User, UserCheck, Plus, Search, ArrowUpDown, ChevronDown, FileSearch, Eye, EyeOff, Check, Undo, AlertTriangle, List, LayoutGrid, Files, Filter, File, RefreshCw, XCircle, Edit, Columns3, TableProperties, MoreHorizontal, CircleX, Trash2, X } from 'lucide-react';
+import { Workflow, Clock, FileText, Calendar, ChevronRight, ChevronLeft, User, UserCheck, Plus, Search, ArrowUpDown, ChevronDown, FileSearch, Eye, EyeOff, Check, Undo, AlertTriangle, List, LayoutGrid, Files, Filter, File, RefreshCw, XCircle, Edit, Columns3, TableProperties, MoreHorizontal, CircleX, Trash2, X } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { ScrollArea } from './ui/scroll-area';
 import { toast } from 'sonner@2.0.3';
@@ -710,6 +710,36 @@ export function DocumentWorkflowPage() {
   // Board selection (Kanban + tabela): chave "stageId::docId"
   const [selectedBoardKeys, setSelectedBoardKeys] = useState<string[]>([]);
   const [collapsedStages, setCollapsedStages] = useState<Record<string, boolean>>({});
+
+  // Kanban horizontal scroll controls
+  const kanbanScrollRef = useRef<HTMLDivElement>(null);
+  const [kanbanCanScrollLeft, setKanbanCanScrollLeft] = useState(false);
+  const [kanbanCanScrollRight, setKanbanCanScrollRight] = useState(false);
+
+  const updateKanbanScrollState = useCallback(() => {
+    const el = kanbanScrollRef.current;
+    if (!el) return;
+    setKanbanCanScrollLeft(el.scrollLeft > 0);
+    setKanbanCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    if (boardViewMode !== 'kanban') return;
+    const el = kanbanScrollRef.current;
+    if (!el) return;
+    updateKanbanScrollState();
+    el.addEventListener('scroll', updateKanbanScrollState, { passive: true });
+    const ro = new ResizeObserver(updateKanbanScrollState);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener('scroll', updateKanbanScrollState);
+      ro.disconnect();
+    };
+  }, [boardViewMode, updateKanbanScrollState]);
+
+  const scrollKanban = (dir: 'left' | 'right') => {
+    kanbanScrollRef.current?.scrollBy({ left: dir === 'left' ? -340 : 340, behavior: 'smooth' });
+  };
   
   const currentWorkflow = teamWorkflows[selectedTeam as keyof typeof teamWorkflows];
   
@@ -1804,12 +1834,48 @@ export function DocumentWorkflowPage() {
 
           {/* Board Content: Kanban or Table */}
           {boardViewMode === 'kanban' ? (
-            <div className="bg-card border border-woopi-ai-border rounded-lg p-4">
-              <div className="overflow-x-auto">
-                <div className="flex gap-4 min-w-max pb-4">
-                  {currentWorkflow.stages.map((stage) => (
-                    <KanbanColumn key={stage.id} stage={stage} />
-                  ))}
+            <div className="bg-card border border-woopi-ai-border rounded-lg">
+              {/* Scroll-nav strip — always reserves height so the layout never shifts */}
+              <div className="flex items-center justify-end gap-1 px-3 py-2 min-h-[38px]">
+                {(kanbanCanScrollLeft || kanbanCanScrollRight) && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => scrollKanban('left')}
+                      disabled={!kanbanCanScrollLeft}
+                      title="Colunas anteriores"
+                      className={`w-7 h-7 flex items-center justify-center rounded border bg-card transition-all duration-150 ${
+                        kanbanCanScrollLeft
+                          ? 'border-woopi-ai-border text-woopi-ai-dark-gray hover:border-woopi-ai-blue hover:text-woopi-ai-blue hover:bg-woopi-ai-light-blue/30'
+                          : 'border-woopi-ai-border/40 text-woopi-ai-gray/30 cursor-not-allowed'
+                      }`}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollKanban('right')}
+                      disabled={!kanbanCanScrollRight}
+                      title="Próximas colunas"
+                      className={`w-7 h-7 flex items-center justify-center rounded border bg-card transition-all duration-150 ${
+                        kanbanCanScrollRight
+                          ? 'border-woopi-ai-border text-woopi-ai-dark-gray hover:border-woopi-ai-blue hover:text-woopi-ai-blue hover:bg-woopi-ai-light-blue/30'
+                          : 'border-woopi-ai-border/40 text-woopi-ai-gray/30 cursor-not-allowed'
+                      }`}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </div>
+              {/* Scrollable kanban columns */}
+              <div className="px-4 pb-4">
+                <div ref={kanbanScrollRef} className="overflow-x-auto">
+                  <div className="flex gap-4 min-w-max pb-4">
+                    {currentWorkflow.stages.map((stage) => (
+                      <KanbanColumn key={stage.id} stage={stage} />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
