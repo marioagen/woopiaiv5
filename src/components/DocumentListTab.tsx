@@ -46,6 +46,7 @@ import {
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 import { ScrollArea } from './ui/scroll-area';
 import { toast } from 'sonner';
+import { formatInclusionDateTime, inclusionDateToMillis } from '../lib/formatInclusionDateTime';
 
 interface Document {
   id: number;
@@ -505,6 +506,12 @@ export function DocumentListTab() {
         return sortDirection === 'asc' ? aTime - bTime : bTime - aTime;
       }
 
+      if (sortField === 'uploadDate') {
+        const aTime = inclusionDateToMillis(a.uploadDate);
+        const bTime = inclusionDateToMillis(b.uploadDate);
+        return sortDirection === 'asc' ? aTime - bTime : bTime - aTime;
+      }
+
       let aValue: any = a[sortField as keyof Document];
       let bValue: any = b[sortField as keyof Document];
 
@@ -769,7 +776,7 @@ export function DocumentListTab() {
                     onClick={() => handleSort('uploadDate')}
                   >
                     <div className="flex items-center space-x-1">
-                      <span>Data Upload</span>
+                      <span>Data de inclusão</span>
                       {getSortIcon('uploadDate')}
                     </div>
                   </TableHead>
@@ -849,8 +856,8 @@ export function DocumentListTab() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="woopi-ai-text-secondary">
-                          {new Date(doc.uploadDate).toLocaleDateString('pt-BR')}
+                        <span className="woopi-ai-text-secondary whitespace-nowrap text-sm">
+                          {formatInclusionDateTime(doc.uploadDate)}
                         </span>
                       </TableCell>
                       <TableCell>

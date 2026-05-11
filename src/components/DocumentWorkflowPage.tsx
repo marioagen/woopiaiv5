@@ -23,6 +23,7 @@ import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from './ui/t
 import { SearchableSelect } from './ui/searchable-select';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from './ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { formatInclusionDateTime, inclusionDateToMillis } from '../lib/formatInclusionDateTime';
 
 // Mock data for teams and their workflows
 const initialTeamWorkflows = {
@@ -744,15 +745,6 @@ export function DocumentWorkflowPage() {
     );
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Aguardando análise':
@@ -899,8 +891,8 @@ export function DocumentWorkflowPage() {
         const cmp = a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
         return orderDocumentsBy === 'name-asc' ? cmp : -cmp;
       }
-      const dateA = new Date(a.uploadDate).getTime();
-      const dateB = new Date(b.uploadDate).getTime();
+      const dateA = inclusionDateToMillis(a.uploadDate);
+      const dateB = inclusionDateToMillis(b.uploadDate);
       return orderDocumentsBy === 'recent' ? dateB - dateA : dateA - dateB;
     });
     if (kanbanBatchFilter === 'all') return sortedDocuments;
@@ -956,7 +948,10 @@ export function DocumentWorkflowPage() {
               <div className="flex items-center gap-2 mt-2">
                 <Calendar className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                 <span className="text-xs text-muted-foreground">
-                  Carregado em: <span className="text-foreground font-medium">20/02/2026</span>
+                  Inclusão:{' '}
+                  <span className="text-foreground font-medium">
+                    {formatInclusionDateTime('2026-02-20T09:15:00')}
+                  </span>
                 </span>
               </div>
             </div>
@@ -1025,7 +1020,10 @@ export function DocumentWorkflowPage() {
           <div className="flex items-center gap-2">
             <Calendar className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             <span className="text-xs text-muted-foreground">
-              Carregado em: <span className="text-foreground font-medium">20/02/2026</span>
+              Inclusão:{' '}
+              <span className="text-foreground font-medium">
+                {formatInclusionDateTime('2026-02-20T09:15:00')}
+              </span>
             </span>
           </div>
 
@@ -1129,11 +1127,14 @@ export function DocumentWorkflowPage() {
               </p>
             </div>
             
-            {/* Data de carregamento */}
+            {/* Data de inclusão */}
             <div className="flex items-center gap-2">
               <Calendar className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
               <span className="text-xs text-muted-foreground">
-                Carregado em: <span className="text-foreground font-medium">{formatDate(document.uploadDate)}</span>
+                Inclusão:{' '}
+                <span className="text-foreground font-medium">
+                  {formatInclusionDateTime(document.uploadDate)}
+                </span>
               </span>
             </div>
             
@@ -1383,7 +1384,9 @@ export function DocumentWorkflowPage() {
                       <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[120px]">ID</TableHead>
                       <TableHead className="text-xs font-semibold text-woopi-ai-gray">Documento</TableHead>
                       <TableHead className="text-xs font-semibold text-woopi-ai-gray min-w-[12ch] max-w-[18ch] sm:max-w-[28ch] md:max-w-[40ch] lg:max-w-[52ch]">Descrição</TableHead>
-                      <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[110px]">Data</TableHead>
+                      <TableHead className="text-xs font-semibold text-woopi-ai-gray whitespace-nowrap min-w-[150px]">
+                        Data de inclusão
+                      </TableHead>
                       <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[130px]">Status</TableHead>
                       <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[140px]">Solicitante</TableHead>
                       <TableHead className="text-xs font-semibold text-woopi-ai-gray w-[140px]">Responsável</TableHead>
@@ -1424,8 +1427,8 @@ export function DocumentWorkflowPage() {
                               {doc.description}
                             </div>
                           </TableCell>
-                          <TableCell className="text-xs text-muted-foreground">
-                            {formatDate(doc.uploadDate)}
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                            {formatInclusionDateTime(doc.uploadDate)}
                           </TableCell>
                           <TableCell>
                             <Badge className={`${getStatusColor(isFinalized ? 'Finalizado' : doc.status)} text-[11px] px-2 py-0.5 whitespace-nowrap`}>
