@@ -22,7 +22,7 @@ import { DocumentListTab } from './DocumentListTab';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 import { SearchableSelect } from './ui/searchable-select';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from './ui/table';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { formatInclusionDateTime, inclusionDateToMillis } from '../lib/formatInclusionDateTime';
 
 // Mock data for teams and their workflows
@@ -711,6 +711,9 @@ export function DocumentWorkflowPage() {
   const [selectedBoardKeys, setSelectedBoardKeys] = useState<string[]>([]);
   const [collapsedStages, setCollapsedStages] = useState<Record<string, boolean>>({});
 
+  // State for single-doc delete confirmation (table dropdown)
+  const [deleteConfirmDocKey, setDeleteConfirmDocKey] = useState<{ id: string; stageId: string } | null>(null);
+
   // Kanban horizontal scroll controls
   const kanbanScrollRef = useRef<HTMLDivElement>(null);
   const [kanbanCanScrollLeft, setKanbanCanScrollLeft] = useState(false);
@@ -939,6 +942,12 @@ export function DocumentWorkflowPage() {
     });
   };
 
+  const navigateToActionWithKeys = (action: 'atribuir' | 'reprovar', keys: string[]) => {
+    navigate(`/documentos/workflow/${action}`, {
+      state: { selectedKeys: keys, returnTo: '/documentos/workflow' },
+    });
+  };
+
   const handleBulkDeleteBoard = () => {
     setTeamWorkflows((prev) => {
       const next = { ...prev };
@@ -954,6 +963,43 @@ export function DocumentWorkflowPage() {
     const n = selectedBoardKeys.length;
     setSelectedBoardKeys([]);
     toast.success(`${n} documento(s) excluído(s) com sucesso`);
+  };
+
+  const handleDeleteSingleDocument = (docId: string, stageId: string) => {
+    setTeamWorkflows((prev) => {
+      const next = { ...prev };
+      const wf = { ...next[selectedTeam as keyof typeof next] };
+      const docsMap = { ...wf.documents } as Record<string, DocumentCard[]>;
+      docsMap[stageId] = (docsMap[stageId] || []).filter((d) => d.id !== docId);
+      return { ...next, [selectedTeam]: { ...wf, documents: docsMap } };
+    });
+    setSelectedBoardKeys((prev) => prev.filter((k) => k !== boardDocKey(stageId, docId)));
+    setDeleteConfirmDocKey(null);
+    toast.success(`Documento ${docId} excluído com sucesso`);
+  };
+
+  const handleBulkFinalizeBoard = () => {
+    setTeamWorkflows((prev) => {
+      const next = { ...prev };
+      const wf = { ...next[selectedTeam as keyof typeof next] };
+      const docsMap = { ...wf.documents } as Record<string, DocumentCard[]>;
+      selectedBoardKeys.forEach((key) => {
+        const [stageId, docId] = key.split('::');
+        if (!docsMap[stageId]) return;
+        const idx = docsMap[stageId].findIndex((d) => d.id === docId);
+        if (idx !== -1) {
+          docsMap[stageId] = [
+            ...docsMap[stageId].slice(0, idx),
+            { ...docsMap[stageId][idx], isFinalized: true },
+            ...docsMap[stageId].slice(idx + 1),
+          ];
+        }
+      });
+      return { ...next, [selectedTeam]: { ...wf, documents: docsMap } };
+    });
+    const n = selectedBoardKeys.length;
+    setSelectedBoardKeys([]);
+    toast.success(`${n} documento(s) finalizado(s) com sucesso`);
   };
 
   // ── Demo card: estado Processando ────────────────────────────────────────
@@ -1482,7 +1528,7 @@ export function DocumentWorkflowPage() {
                                     <MoreHorizontal className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="min-w-[10rem]">
+                                <DropdownMenuContent align="end" className="min-w-[11rem]">
                                   <DropdownMenuItem
                                     onClick={() => handleAnalyzeDocument(doc.id)}
                                     className="cursor-pointer"
@@ -1511,6 +1557,29 @@ export function DocumentWorkflowPage() {
                                       Finalizar
                                     </DropdownMenuItem>
                                   )}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => navigateToActionWithKeys('atribuir', [boardDocKey(stage.id, doc.id)])}
+                                    className="cursor-pointer"
+                                  >
+                                    <UserCheck className="mr-2 h-4 w-4 text-blue-600" />
+                                    Atribuir
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => navigateToActionWithKeys('reprovar', [boardDocKey(stage.id, doc.id)])}
+                                    className="cursor-pointer text-orange-600 focus:text-orange-600 focus:bg-orange-50 dark:focus:bg-orange-500/10"
+                                  >
+                                    <CircleX className="mr-2 h-4 w-4" />
+                                    Reprovar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => setDeleteConfirmDocKey({ id: doc.id, stageId: stage.id })}
+                                    className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-500/10"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Excluir
+                                  </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             )}
@@ -1768,7 +1837,10 @@ export function DocumentWorkflowPage() {
               </div>
 
               {/* Linha 3: Barra de seleção em massa — só aparece na visualização em tabela */}
-              {boardViewMode === 'table' && selectedBoardKeys.length > 0 && (
+              {boardViewMode === 'table' && selectedBoardKeys.length > 0 && (() => {
+                const lastStageId = currentWorkflow.stages[currentWorkflow.stages.length - 1]?.id;
+                const allSelectedAreLastStage = !!lastStageId && selectedBoardKeys.every((k) => k.startsWith(`${lastStageId}::`));
+                return (
                 <>
                   <div className="border-t border-woopi-ai-border -mx-4 px-0" />
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-0.5">
@@ -1780,35 +1852,64 @@ export function DocumentWorkflowPage() {
                         {selectedBoardKeys.length === 1 ? 'documento selecionado' : 'documentos selecionados'}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Button
-                        size="sm"
-                        onClick={() => navigateToAction('atribuir')}
-                        className="h-8 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium gap-1.5"
-                      >
-                        <UserCheck className="w-3.5 h-3.5" />
-                        Atribuir
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => navigateToAction('reprovar')}
-                        className="h-8 bg-red-600 hover:bg-red-700 text-white text-xs font-medium gap-1.5"
-                      >
-                        <CircleX className="w-3.5 h-3.5" />
-                        Reprovar
-                      </Button>
-                      <div className="w-px h-5 bg-woopi-ai-border mx-1 hidden sm:block" />
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
+                    <div className="flex items-center gap-1">
+                      {allSelectedAreLastStage && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={handleBulkFinalizeBoard}
+                              className="h-8 w-8 border-green-400 text-green-600 hover:bg-green-50 hover:border-green-500 dark:border-green-600 dark:text-green-400 dark:hover:bg-green-900/20"
+                            >
+                              <Check className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Finalizar</p></TooltipContent>
+                        </Tooltip>
+                      )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
                           <Button
                             variant="outline"
-                            size="sm"
-                            className="h-8 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 text-xs font-medium gap-1.5"
+                            size="icon"
+                            onClick={() => navigateToAction('atribuir')}
+                            className="h-8 w-8 border-blue-400 text-blue-600 hover:bg-blue-50 hover:border-blue-500 dark:border-blue-600 dark:text-blue-400 dark:hover:bg-blue-900/20"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            Excluir
+                            <UserCheck className="w-4 h-4" />
                           </Button>
-                        </AlertDialogTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Atribuir</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => navigateToAction('reprovar')}
+                            className="h-8 w-8 border-orange-400 text-orange-600 hover:bg-orange-50 hover:border-orange-500 dark:border-orange-600 dark:text-orange-400 dark:hover:bg-orange-900/20"
+                          >
+                            <CircleX className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Reprovar</p></TooltipContent>
+                      </Tooltip>
+                      <div className="w-px h-5 bg-woopi-ai-border mx-1" />
+                      <AlertDialog>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Excluir</p></TooltipContent>
+                        </Tooltip>
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
@@ -1828,7 +1929,8 @@ export function DocumentWorkflowPage() {
                     </div>
                   </div>
                 </>
-              )}
+                );
+              })()}
             </div>
           </div>
 
@@ -1924,6 +2026,30 @@ export function DocumentWorkflowPage() {
       )}
 
       {/* Finalize Confirmation Modal */}
+      {/* AlertDialog: confirmação de exclusão individual (acionada pelo dropdown ···) */}
+      <AlertDialog open={!!deleteConfirmDocKey} onOpenChange={(open) => { if (!open) setDeleteConfirmDocKey(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o documento <strong>{deleteConfirmDocKey?.id}</strong>?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteConfirmDocKey(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => {
+                if (deleteConfirmDocKey) handleDeleteSingleDocument(deleteConfirmDocKey.id, deleteConfirmDocKey.stageId);
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={isFinalizeModalOpen} onOpenChange={setIsFinalizeModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
