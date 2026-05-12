@@ -51,6 +51,7 @@ export function DocumentUploadPage() {
   const [selectedWorkflows, setSelectedWorkflows] = useState<number[]>([]);
   const [availableWorkflows, setAvailableWorkflows] = useState<WorkflowItem[]>([]);
   const [documentosEmLote, setDocumentosEmLote] = useState(false);
+  const [mergearDocumentos, setMergearDocumentos] = useState(false);
 
   // Teams data removed as teams section is now hidden
 
@@ -292,18 +293,31 @@ export function DocumentUploadPage() {
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 md:space-y-6">
                 {/* 1. Upload Dropzone */}
                 <div className="space-y-2 sm:space-y-3">
-                  {/* Checkbox documentos em lote - acima do dropzone, alinhado à esquerda */}
-                  <label
-                    htmlFor="documentos-em-lote"
-                    className="flex items-center gap-2 cursor-pointer select-none w-fit"
-                  >
-                    <Checkbox
-                      id="documentos-em-lote"
-                      checked={documentosEmLote}
-                      onCheckedChange={(val) => setDocumentosEmLote(Boolean(val))}
-                    />
-                    <span className="text-sm woopi-ai-text-secondary">Documentos em lote</span>
-                  </label>
+                  {/* Opções acima do dropzone */}
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <label
+                      htmlFor="documentos-em-lote"
+                      className="flex items-center gap-2 cursor-pointer select-none w-fit"
+                    >
+                      <Checkbox
+                        id="documentos-em-lote"
+                        checked={documentosEmLote}
+                        onCheckedChange={(val) => setDocumentosEmLote(Boolean(val))}
+                      />
+                      <span className="text-sm woopi-ai-text-secondary">Documentos em lote</span>
+                    </label>
+                    <label
+                      htmlFor="mergear-documentos"
+                      className="flex items-center gap-2 cursor-pointer select-none w-fit pl-2"
+                    >
+                      <Checkbox
+                        id="mergear-documentos"
+                        checked={mergearDocumentos}
+                        onCheckedChange={(val) => setMergearDocumentos(Boolean(val))}
+                      />
+                      <span className="text-sm woopi-ai-text-secondary">Mergear documentos</span>
+                    </label>
+                  </div>
                   <div 
                     className={`border-2 border-dashed rounded-lg p-4 sm:p-6 md:p-8 text-center transition-all cursor-pointer ${
                       dragActive 
