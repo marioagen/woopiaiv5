@@ -1417,7 +1417,7 @@ function UsersAuditTab() {
           name,
           teams: userTeamsMap[name] || ['Sem time'],
           events: [],
-          workflows: new Set(),
+          workflows: new Set<string>(),
           actionCounts: {},
           toolTypeCounts: {}
         };
@@ -1495,7 +1495,7 @@ function UsersAuditTab() {
     let events = selectedUserData.events;
     if (toolCategoryFilter !== 'all') events = events.filter(e => e.toolType === toolCategoryFilter);
     if (docActionFilter === 'doc') events = events.filter(e => (DOC_ACTIONS as readonly string[]).includes(e.action));
-    const actionSet = new Set(events.map(e => e.action));
+    const actionSet = new Set<string>(events.map(e => e.action));
     return Array.from(actionSet).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
   }, [selectedUserData, toolCategoryFilter, docActionFilter]);
 
@@ -1610,7 +1610,7 @@ function UsersAuditTab() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 mb-1.5 ml-9 flex-wrap">
-                      {Array.from(u.workflows).filter(wf => wf !== 'Ferramentas' && wf !== 'Esteiras').map(wf => (
+                      {Array.from(u.workflows as Set<string>).filter(wf => wf !== 'Ferramentas' && wf !== 'Esteiras').map(wf => (
                         <Badge key={wf} className="bg-[#0073ea]/10 text-[#0073ea] text-[10px] px-1.5 py-0 font-normal">
                           {wf.length > 20 ? wf.substring(0, 20) + '...' : wf}
                         </Badge>
