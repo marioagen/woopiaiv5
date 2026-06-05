@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { ArrowLeft, Save, ShieldUser, Lock, Home, BarChart3, Users, FileText, GitBranch, Settings, HelpCircle, Wrench, MessageSquare, Eye, Edit3, FileSearch } from 'lucide-react';
+import { ArrowLeft, Save, ShieldUser, Lock, Home, BarChart3, Users, FileText, GitBranch, Settings, HelpCircle, Wrench, MessageSquare, Eye, Edit3, FileSearch, AlertCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -9,6 +9,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '..
 import { Checkbox } from '../ui/checkbox';
 import { useUserManagement } from './useUserManagement';
 import { toast } from 'sonner@2.0.3';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 // Types for granular permissions
 interface SimplePermission {
@@ -95,6 +96,47 @@ interface GranularPermissions {
   };
 }
 
+type WorkflowPermissionsState = {
+  documentApproval: { step1: string; step2: string; step3: string };
+  clientOnboarding: { stepA: string; stepB: string; stepC: string; stepD: string };
+};
+
+function hasTruthyPermissionValue(value: unknown): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') return value === 'view' || value === 'access';
+  if (value && typeof value === 'object') {
+    return Object.values(value).some(hasTruthyPermissionValue);
+  }
+  return false;
+}
+
+function hasAtLeastOneModuleSelected(
+  granularPermissions: GranularPermissions,
+  workflowPermissions: WorkflowPermissionsState
+): boolean {
+  if (granularPermissions.home.view || granularPermissions.dashboard.view) {
+    return true;
+  }
+
+  const accordionModules: Array<
+    'gestaoUsuarios' | 'documentos' | 'analiseDocumentos' | 'gestaoEsteiras' | 'questionarios' | 'ferramentas' | 'prompts'
+  > = [
+    'gestaoUsuarios',
+    'documentos',
+    'analiseDocumentos',
+    'gestaoEsteiras',
+    'questionarios',
+    'ferramentas',
+    'prompts',
+  ];
+
+  if (accordionModules.some((module) => hasTruthyPermissionValue(granularPermissions[module]))) {
+    return true;
+  }
+
+  return hasTruthyPermissionValue(workflowPermissions);
+}
+
 const defaultGranularPermissions: GranularPermissions = {
   home: { view: false },
   dashboard: { view: false },
@@ -153,6 +195,8 @@ export function RoleFormPage() {
     createRole,
     updateRole
   } = useUserManagement();
+
+  const [showModulesRequiredAlert, setShowModulesRequiredAlert] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -222,6 +266,15 @@ export function RoleFormPage() {
       }
     }
   }, [id, isEditing, roles, navigate]);
+
+  useEffect(() => {
+    if (
+      showModulesRequiredAlert &&
+      hasAtLeastOneModuleSelected(formData.granularPermissions, formData.workflowPermissions)
+    ) {
+      setShowModulesRequiredAlert(false);
+    }
+  }, [formData.granularPermissions, formData.workflowPermissions, showModulesRequiredAlert]);
 
   // Handlers for granular permissions
   const handleSimpleViewToggle = (module: 'home' | 'dashboard') => {
@@ -380,7 +433,13 @@ export function RoleFormPage() {
 
   const handleSave = () => {
     if (!formData.name.trim()) {
-      toast.error('Nome do perfil é obrigatório');
+      toast.error('Informe um nome para o perfil antes de salvar.');
+      return;
+    }
+
+    if (!hasAtLeastOneModuleSelected(formData.granularPermissions, formData.workflowPermissions)) {
+      setShowModulesRequiredAlert(true);
+      toast.error('Selecione ao menos um módulo para continuar.');
       return;
     }
 
@@ -534,6 +593,16 @@ export function RoleFormPage() {
             {/* Granular Permissions */}
             <div className="space-y-2">
               <Label>Permissões Granulares por Módulo</Label>
+              {showModulesRequiredAlert && (
+                <Alert variant="destructive" className="border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Selecione ao menos um módulo</AlertTitle>
+                  <AlertDescription>
+                    Para salvar este perfil, conceda acesso a pelo menos uma área do sistema.
+                    Marque <strong>Visualizar</strong> ou <strong>Editar</strong> em um dos módulos abaixo.
+                  </AlertDescription>
+                </Alert>
+              )}
               <div className="border rounded-md p-4 bg-muted space-y-3">
 
                 {/* ===== HOME - Simple Card ===== */}
