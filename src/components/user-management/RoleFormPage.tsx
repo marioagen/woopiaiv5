@@ -9,7 +9,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '..
 import { Checkbox } from '../ui/checkbox';
 import { useUserManagement } from './useUserManagement';
 import { toast } from 'sonner@2.0.3';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 // Types for granular permissions
 interface SimplePermission {
@@ -592,16 +591,19 @@ export function RoleFormPage() {
 
             {/* Granular Permissions */}
             <div className="space-y-2">
-              <Label>Permissões Granulares por Módulo</Label>
+              <Label>Permissões por Módulo</Label>
               {showModulesRequiredAlert && (
-                <Alert variant="destructive" className="border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Selecione ao menos um módulo</AlertTitle>
-                  <AlertDescription>
-                    Para salvar este perfil, conceda acesso a pelo menos uma área do sistema.
-                    Marque <strong>Visualizar</strong> ou <strong>Editar</strong> em um dos módulos abaixo.
-                  </AlertDescription>
-                </Alert>
+                <div
+                  role="alert"
+                  aria-live="polite"
+                  className="flex items-center gap-2.5 rounded-md border border-red-200 border-l-[3px] border-l-red-500 bg-red-50 px-3 py-2 text-sm dark:border-red-900/50 dark:border-l-red-400 dark:bg-red-950/30 animate-in fade-in slide-in-from-top-1 duration-200"
+                >
+                  <AlertCircle className="h-4 w-4 shrink-0 text-woopi-ai-error" aria-hidden />
+                  <p className="min-w-0 leading-tight text-woopi-ai-dark-gray">
+                    <span className="font-semibold text-woopi-ai-error">Selecione ao menos um módulo.</span>{' '}
+                    Marque <span className="font-medium">Visualizar</span> ou <span className="font-medium">Editar</span> em um dos módulos abaixo.
+                  </p>
+                </div>
               )}
               <div className="border rounded-md p-4 bg-muted space-y-3">
 
