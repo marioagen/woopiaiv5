@@ -100,6 +100,73 @@ type WorkflowPermissionsState = {
   clientOnboarding: { stepA: string; stepB: string; stepC: string; stepD: string };
 };
 
+// ─── Esteira permissions ───────────────────────────────────────────────────────
+type EtapaPermission = 'none' | 'view' | 'access';
+
+interface EtapaConfig {
+  key: string;
+  label: string;
+}
+
+interface EsteiraConfig {
+  id: string;
+  name: string;
+  etapas: EtapaConfig[];
+}
+
+type EsteiraPermissions = Record<string, Record<string, EtapaPermission>>;
+
+const AVAILABLE_ESTEIRAS: EsteiraConfig[] = [
+  {
+    id: 'aprovacao-documentos',
+    name: 'Aprovação de Documentos',
+    etapas: [
+      { key: 'e1', label: 'Revisão Inicial' },
+      { key: 'e2', label: 'Aprovação Gerencial' },
+      { key: 'e3', label: 'Publicação' },
+    ],
+  },
+  {
+    id: 'analise-financeira',
+    name: 'Análise Financeira',
+    etapas: [
+      { key: 'e1', label: 'Recebimento' },
+      { key: 'e2', label: 'Verificação Financeira' },
+      { key: 'e3', label: 'Aprovação de Pagamento' },
+      { key: 'e4', label: 'Pagos e Conciliados' },
+    ],
+  },
+  {
+    id: 'revisao-juridica',
+    name: 'Revisão Jurídica',
+    etapas: [
+      { key: 'e1', label: 'Triagem Inicial' },
+      { key: 'e2', label: 'Análise Jurídica' },
+      { key: 'e3', label: 'Parecer Final' },
+    ],
+  },
+  {
+    id: 'onboarding-clientes',
+    name: 'Onboarding de Clientes',
+    etapas: [
+      { key: 'e1', label: 'Coleta de Dados' },
+      { key: 'e2', label: 'Verificação de Crédito' },
+      { key: 'e3', label: 'Ativação de Conta' },
+      { key: 'e4', label: 'Boas-vindas' },
+    ],
+  },
+  {
+    id: 'aprovacao-contratos',
+    name: 'Aprovação de Contratos',
+    etapas: [
+      { key: 'e1', label: 'Elaboração' },
+      { key: 'e2', label: 'Revisão Jurídica' },
+      { key: 'e3', label: 'Assinatura' },
+      { key: 'e4', label: 'Arquivamento' },
+    ],
+  },
+];
+
 function hasTruthyPermissionValue(value: unknown): boolean {
   if (typeof value === 'boolean') return value;
   if (typeof value === 'string') return value === 'view' || value === 'access';
@@ -196,6 +263,41 @@ export function RoleFormPage() {
   } = useUserManagement();
 
   const [showModulesRequiredAlert, setShowModulesRequiredAlert] = useState(false);
+
+  // Esteira permissions state
+  const [selectedEsteiraIds, setSelectedEsteiraIds] = useState<string[]>([]);
+  const [esteiraPermissions, setEsteiraPermissions] = useState<EsteiraPermissions>({});
+
+  const handleToggleEsteira = (esteiraId: string) => {
+    setSelectedEsteiraIds(prev => {
+      if (prev.includes(esteiraId)) {
+        return prev.filter(id => id !== esteiraId);
+      }
+      // Init permissions for this esteira
+      const esteira = AVAILABLE_ESTEIRAS.find(e => e.id === esteiraId);
+      if (esteira) {
+        const defaultEtapas: Record<string, EtapaPermission> = {};
+        esteira.etapas.forEach(et => { defaultEtapas[et.key] = 'none'; });
+        setEsteiraPermissions(prev => ({ ...prev, [esteiraId]: defaultEtapas }));
+      }
+      return [...prev, esteiraId];
+    });
+  };
+
+  const handleEtapaPermissionChange = (
+    esteiraId: string,
+    etapaKey: string,
+    perm: 'view' | 'access'
+  ) => {
+    setEsteiraPermissions(prev => {
+      const current = prev[esteiraId]?.[etapaKey] ?? 'none';
+      const next: EtapaPermission = current === perm ? 'none' : perm;
+      return {
+        ...prev,
+        [esteiraId]: { ...prev[esteiraId], [etapaKey]: next },
+      };
+    });
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -1022,90 +1124,149 @@ export function RoleFormPage() {
                     </AccordionContent>
                   </AccordionItem>
 
-                  {/* ===== ESTEIRAS DE PROCESSAMENTO (WORKFLOW) ===== */}
-                  <AccordionItem value="esteirasProcessamento" className="border rounded-md bg-card">
-                    <AccordionTrigger className="px-4 hover:no-underline">
-                      <div className="flex items-center gap-2 flex-1">
-                        <GitBranch className="w-4 h-4 text-woopi-ai-blue" />
-                        <span className="font-medium text-woopi-ai-dark-gray">Esteiras de Processamento (Workflow)</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      <div className="space-y-6 pt-3">
-                        {/* Workflow de Aprovação de Documentos */}
-                        <div className="pl-4 border-l-2 border-woopi-ai-blue/20">
-                          <p className="text-sm font-semibold text-woopi-ai-dark-gray mb-3">Workflow de Aprovação de Documentos</p>
-                          <div className="space-y-2">
-                            {[
-                              { key: 'step1', label: 'Etapa 1: Revisão Inicial' },
-                              { key: 'step2', label: 'Etapa 2: Aprovação Gerencial' },
-                              { key: 'step3', label: 'Etapa 3: Publicação' },
-                            ].map(step => (
-                              <div key={step.key} className="flex items-center justify-between py-2 border-b last:border-b-0 border-border">
-                                <span className="text-sm text-woopi-ai-dark-gray">{step.label}</span>
-                                <div className="flex items-center gap-6">
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id={`doc-${step.key}-view`}
-                                      checked={formData.workflowPermissions.documentApproval[step.key as keyof typeof formData.workflowPermissions.documentApproval] === 'view'}
-                                      onCheckedChange={() => handleWorkflowPermissionChange('documentApproval', step.key, 'view')}
-                                    />
-                                    <Label htmlFor={`doc-${step.key}-view`} className="text-sm text-woopi-ai-gray cursor-pointer">Visualizar</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id={`doc-${step.key}-access`}
-                                      checked={formData.workflowPermissions.documentApproval[step.key as keyof typeof formData.workflowPermissions.documentApproval] === 'access'}
-                                      onCheckedChange={() => handleWorkflowPermissionChange('documentApproval', step.key, 'access')}
-                                    />
-                                    <Label htmlFor={`doc-${step.key}-access`} className="text-sm text-woopi-ai-gray cursor-pointer">Editar</Label>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Workflow de Onboarding de Cliente */}
-                        <div className="pl-4 border-l-2 border-woopi-ai-blue/20">
-                          <p className="text-sm font-semibold text-woopi-ai-dark-gray mb-3">Workflow de Onboarding de Cliente</p>
-                          <div className="space-y-2">
-                            {[
-                              { key: 'stepA', label: 'Etapa A: Coleta de Dados' },
-                              { key: 'stepB', label: 'Etapa B: Verificação de Crédito' },
-                              { key: 'stepC', label: 'Etapa C: Ativação de Conta' },
-                              { key: 'stepD', label: 'Etapa D: Boas-vindas' },
-                            ].map(step => (
-                              <div key={step.key} className="flex items-center justify-between py-2 border-b last:border-b-0 border-border">
-                                <span className="text-sm text-woopi-ai-dark-gray">{step.label}</span>
-                                <div className="flex items-center gap-6">
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id={`client-${step.key}-view`}
-                                      checked={formData.workflowPermissions.clientOnboarding[step.key as keyof typeof formData.workflowPermissions.clientOnboarding] === 'view'}
-                                      onCheckedChange={() => handleWorkflowPermissionChange('clientOnboarding', step.key, 'view')}
-                                    />
-                                    <Label htmlFor={`client-${step.key}-view`} className="text-sm text-woopi-ai-gray cursor-pointer">Visualizar</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id={`client-${step.key}-access`}
-                                      checked={formData.workflowPermissions.clientOnboarding[step.key as keyof typeof formData.workflowPermissions.clientOnboarding] === 'access'}
-                                      onCheckedChange={() => handleWorkflowPermissionChange('clientOnboarding', step.key, 'access')}
-                                    />
-                                    <Label htmlFor={`client-${step.key}-access`} className="text-sm text-woopi-ai-gray cursor-pointer">Editar</Label>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
                 </Accordion>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* ─── Esteiras de Processamento (optional) ─────────────────────── */}
+        <Card className="woopi-ai-card">
+          <CardHeader className="pb-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <GitBranch className="w-5 h-5 text-woopi-ai-blue shrink-0" />
+                <div>
+                  <CardTitle className="woopi-ai-text-primary">
+                    Permissões de Esteira de Processamento
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Opcional — selecione as esteiras e defina o acesso por etapa
+                  </p>
+                </div>
+              </div>
+              <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-woopi-ai-gray bg-muted border border-woopi-ai-border rounded px-2 py-0.5 mt-1">
+                Opcional
+              </span>
+            </div>
+          </CardHeader>
+
+          <CardContent className="pt-0">
+            {/* Esteira selector chips */}
+            <div className="mb-4">
+              <p className="text-xs font-medium text-woopi-ai-gray uppercase tracking-wide mb-2">
+                Esteiras disponíveis
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {AVAILABLE_ESTEIRAS.map(esteira => {
+                  const isSelected = selectedEsteiraIds.includes(esteira.id);
+                  return (
+                    <button
+                      key={esteira.id}
+                      type="button"
+                      onClick={() => handleToggleEsteira(esteira.id)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-150 ${
+                        isSelected
+                          ? 'bg-woopi-ai-blue text-white border-woopi-ai-blue shadow-sm'
+                          : 'bg-card text-woopi-ai-dark-gray border-woopi-ai-border hover:border-woopi-ai-blue hover:text-woopi-ai-blue'
+                      }`}
+                    >
+                      <GitBranch className="w-3 h-3" />
+                      {esteira.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Selected esteiras — permission tables */}
+            {selectedEsteiraIds.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 rounded-lg border border-dashed border-woopi-ai-border bg-muted/40 gap-2">
+                <Lock className="w-8 h-8 text-woopi-ai-border" />
+                <p className="text-sm text-muted-foreground text-center max-w-xs">
+                  Nenhuma esteira selecionada. Selecione acima para definir permissões por etapa.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {selectedEsteiraIds.map(esteiraId => {
+                  const esteira = AVAILABLE_ESTEIRAS.find(e => e.id === esteiraId);
+                  if (!esteira) return null;
+                  const perms = esteiraPermissions[esteiraId] ?? {};
+
+                  return (
+                    <div key={esteiraId} className="rounded-lg border border-woopi-ai-border overflow-hidden">
+                      {/* Esteira header */}
+                      <div className="flex items-center justify-between px-4 py-2.5 bg-muted border-b border-woopi-ai-border">
+                        <div className="flex items-center gap-2">
+                          <GitBranch className="w-3.5 h-3.5 text-woopi-ai-blue" />
+                          <span className="text-sm font-semibold text-woopi-ai-dark-gray">
+                            {esteira.name}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleEsteira(esteiraId)}
+                          className="text-xs text-muted-foreground hover:text-woopi-ai-error transition-colors flex items-center gap-1"
+                          aria-label={`Remover ${esteira.name}`}
+                        >
+                          <span>Remover</span>
+                        </button>
+                      </div>
+
+                      {/* Column headers */}
+                      <div className="grid grid-cols-[1fr_160px_160px] text-[11px] font-medium uppercase tracking-wide text-muted-foreground px-4 py-2 border-b border-woopi-ai-border/60 bg-muted/30">
+                        <span>Etapa</span>
+                        <span className="flex items-center justify-center gap-1">
+                          <Eye className="w-3 h-3" /> Visualizar Etapas
+                        </span>
+                        <span className="flex items-center justify-center gap-1">
+                          <Edit3 className="w-3 h-3" /> Acessar Etapas
+                        </span>
+                      </div>
+
+                      {/* Etapa rows */}
+                      {esteira.etapas.map((etapa, idx) => {
+                        const val = perms[etapa.key] ?? 'none';
+                        return (
+                          <div
+                            key={etapa.key}
+                            className={`grid grid-cols-[1fr_160px_160px] items-center px-4 py-2.5 ${
+                              idx < esteira.etapas.length - 1
+                                ? 'border-b border-woopi-ai-border/40'
+                                : ''
+                            }`}
+                          >
+                            <span className="text-sm text-woopi-ai-dark-gray">
+                              {etapa.label}
+                            </span>
+                            <div className="flex justify-center">
+                              <Checkbox
+                                id={`${esteiraId}-${etapa.key}-view`}
+                                checked={val === 'view' || val === 'access'}
+                                onCheckedChange={() =>
+                                  handleEtapaPermissionChange(esteiraId, etapa.key, 'view')
+                                }
+                              />
+                            </div>
+                            <div className="flex justify-center">
+                              <Checkbox
+                                id={`${esteiraId}-${etapa.key}-access`}
+                                checked={val === 'access'}
+                                disabled={val !== 'view' && val !== 'access'}
+                                onCheckedChange={() =>
+                                  handleEtapaPermissionChange(esteiraId, etapa.key, 'access')
+                                }
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
