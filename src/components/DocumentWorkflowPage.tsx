@@ -694,6 +694,7 @@ export function DocumentWorkflowPage() {
   // State for finalize confirmation modal
   const [isFinalizeModalOpen, setIsFinalizeModalOpen] = useState(false);
   const [documentToFinalize, setDocumentToFinalize] = useState<{ id: string; stageId: string } | null>(null);
+  const [isBulkFinalize, setIsBulkFinalize] = useState(false);
   
   // State for tabs
   const [activeTab, setActiveTab] = useState<'board' | 'list'>('board');
@@ -978,6 +979,36 @@ export function DocumentWorkflowPage() {
     toast.success(`Documento ${docId} excluído com sucesso`);
   };
 
+  const openSingleFinalizeModal = (id: string, stageId: string) => {
+    setIsBulkFinalize(false);
+    setDocumentToFinalize({ id, stageId });
+    setIsFinalizeModalOpen(true);
+  };
+
+  const openBulkFinalizeModal = () => {
+    setDocumentToFinalize(null);
+    setIsBulkFinalize(true);
+    setIsFinalizeModalOpen(true);
+  };
+
+  const closeFinalizeModal = () => {
+    setIsFinalizeModalOpen(false);
+    setIsBulkFinalize(false);
+    setDocumentToFinalize(null);
+  };
+
+  const confirmFinalize = () => {
+    if (isBulkFinalize) {
+      handleBulkFinalizeBoard();
+    } else if (documentToFinalize) {
+      handleFinalizeDocument(documentToFinalize.id, documentToFinalize.stageId);
+    }
+    closeFinalizeModal();
+  };
+
+  const finalizeModalCount = isBulkFinalize ? selectedBoardKeys.length : 1;
+  const finalizeModalIsPlural = finalizeModalCount > 1;
+
   const handleBulkFinalizeBoard = () => {
     setTeamWorkflows((prev) => {
       const next = { ...prev };
@@ -1260,10 +1291,7 @@ export function DocumentWorkflowPage() {
                 {/* Botão Finalizar (apenas na última coluna) */}
                 {isLastStage && (
                   <Button
-                    onClick={() => {
-                      setDocumentToFinalize({ id: document.id, stageId });
-                      setIsFinalizeModalOpen(true);
-                    }}
+                    onClick={() => openSingleFinalizeModal(document.id, stageId)}
                     variant="outline"
                     className="flex-1 border-2 border-green-600 text-green-600 hover:bg-green-50 dark:border-green-400/60 dark:text-green-400 dark:hover:bg-green-900/20 text-xs font-medium px-3 py-1.5 h-auto rounded-md"
                   >
@@ -1547,10 +1575,7 @@ export function DocumentWorkflowPage() {
                                   )}
                                   {isLastStage && (
                                     <DropdownMenuItem
-                                      onClick={() => {
-                                        setDocumentToFinalize({ id: doc.id, stageId: stage.id });
-                                        setIsFinalizeModalOpen(true);
-                                      }}
+                                      onClick={() => openSingleFinalizeModal(doc.id, stage.id)}
                                       className="cursor-pointer text-green-600 focus:text-green-600 focus:bg-green-50 dark:focus:bg-green-500/10"
                                     >
                                       <Check className="mr-2 h-4 w-4" />
@@ -1859,7 +1884,7 @@ export function DocumentWorkflowPage() {
                             <Button
                               variant="outline"
                               size="icon"
-                              onClick={handleBulkFinalizeBoard}
+                              onClick={openBulkFinalizeModal}
                               className="h-8 w-8 border-green-400 text-green-600 hover:bg-green-50 hover:border-green-500 dark:border-green-600 dark:text-green-400 dark:hover:bg-green-900/20"
                             >
                               <Check className="w-4 h-4" />
@@ -2050,31 +2075,30 @@ export function DocumentWorkflowPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={isFinalizeModalOpen} onOpenChange={setIsFinalizeModalOpen}>
+      <Dialog open={isFinalizeModalOpen} onOpenChange={(open) => { if (!open) closeFinalizeModal(); else setIsFinalizeModalOpen(true); }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Finalizar Documento</DialogTitle>
+            <DialogTitle>
+              {finalizeModalIsPlural ? 'Finalizar Documentos' : 'Finalizar Documento'}
+            </DialogTitle>
             <DialogDescription>
-              Você tem certeza de que deseja finalizar este documento?
+              {finalizeModalIsPlural
+                ? 'Você tem certeza de que deseja finalizar estes documentos?'
+                : 'Você tem certeza de que deseja finalizar este documento?'}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setIsFinalizeModalOpen(false)}
+              onClick={closeFinalizeModal}
             >
               Cancelar
             </Button>
             <Button
               className="bg-green-600 hover:bg-green-700 text-white"
               size="sm"
-              onClick={() => {
-                if (documentToFinalize) {
-                  handleFinalizeDocument(documentToFinalize.id, documentToFinalize.stageId);
-                }
-                setIsFinalizeModalOpen(false);
-              }}
+              onClick={confirmFinalize}
             >
               Finalizar
             </Button>
