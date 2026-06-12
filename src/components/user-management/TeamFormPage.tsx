@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Checkbox } from '../ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { useUserManagement } from './useUserManagement';
+import { SubmitButton } from '../ui/submit-button';
 import { toast } from 'sonner@2.0.3';
 
 export function TeamFormPage() {
@@ -36,6 +37,8 @@ export function TeamFormPage() {
   const [memberSearchTerm, setMemberSearchTerm] = useState('');
   const [roleSearchTerm, setRoleSearchTerm] = useState('');
   const [showAddUserForm, setShowAddUserForm] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [initialSnapshot, setInitialSnapshot] = useState<string | null>(null);
   
   // New user form state
   const [newUserData, setNewUserData] = useState({
@@ -53,47 +56,55 @@ export function TeamFormPage() {
     if (isEditing && id) {
       const team = teams.find(t => t.id === parseInt(id));
       if (team) {
-        setFormData({
+        const loaded = {
           name: team.name,
           selectedMembers: team.members || [],
           selectedRoles: team.roles || []
-        });
+        };
+        setFormData(loaded);
+        setInitialSnapshot(JSON.stringify(loaded));
       }
     }
   }, [id, isEditing, teams]);
 
-  const handleSave = () => {
-    if (!formData.name.trim()) {
-      toast.error('Nome do time é obrigatório');
-      return;
-    }
+  const isFormValid = () => formData.name.trim() !== '';
 
-    if (isEditing) {
-      updateTeam(parseInt(id!), {
-        name: formData.name,
-        members: formData.selectedMembers,
-        membersCount: formData.selectedMembers.length,
-        roles: formData.selectedRoles
-      });
-      toast.success('Time atualizado com sucesso');
-    } else {
-      createTeam({
-        name: formData.name,
-        description: `Time ${formData.name}`,
-        color: '#0073ea',
-        members: formData.selectedMembers,
-        membersCount: formData.selectedMembers.length,
-        leader: formData.selectedMembers.length > 0 
-          ? users.find(u => u.id === formData.selectedMembers[0])?.name || 'Sem líder'
-          : 'Sem líder',
-        createdAt: new Date().toISOString().split('T')[0],
-        status: 'Ativo',
-        roles: formData.selectedRoles
-      });
-      toast.success('Time criado com sucesso');
-    }
+  // Na edição, só habilita salvar quando algo mudou em relação ao estado carregado.
+  const isDirty = !isEditing || (initialSnapshot !== null && JSON.stringify(formData) !== initialSnapshot);
 
-    navigate('/gestaodeusuarios?tab=teams');
+  const handleSave = async () => {
+    if (!isFormValid() || !isDirty) return;
+    setIsSaving(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      if (isEditing) {
+        updateTeam(parseInt(id!), {
+          name: formData.name,
+          members: formData.selectedMembers,
+          membersCount: formData.selectedMembers.length,
+          roles: formData.selectedRoles
+        });
+        toast.success('Time atualizado com sucesso');
+      } else {
+        createTeam({
+          name: formData.name,
+          description: `Time ${formData.name}`,
+          color: '#0073ea',
+          members: formData.selectedMembers,
+          membersCount: formData.selectedMembers.length,
+          leader: formData.selectedMembers.length > 0
+            ? users.find(u => u.id === formData.selectedMembers[0])?.name || 'Sem líder'
+            : 'Sem líder',
+          createdAt: new Date().toISOString().split('T')[0],
+          status: 'Ativo',
+          roles: formData.selectedRoles
+        });
+        toast.success('Time criado com sucesso');
+      }
+      navigate('/gestaodeusuarios?tab=teams');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -285,13 +296,20 @@ export function TeamFormPage() {
           >
             Cancelar
           </Button>
-          <Button 
+          <SubmitButton
             onClick={handleSave}
-            className="woopi-ai-button-primary"
+            isLoading={isSaving}
+            disabled={!isFormValid() || !isDirty}
+            disabledHint={
+              isEditing && !isDirty
+                ? 'Nenhuma alteração para salvar'
+                : !isFormValid()
+                ? 'Informe o nome do time'
+                : undefined
+            }
           >
-            <Save className="w-4 h-4 mr-2" />
             {isEditing ? 'Salvar Alterações' : 'Criar Time'}
-          </Button>
+          </SubmitButton>
         </div>
       </div>
 
@@ -647,6 +665,7 @@ export function TeamFormPage() {
                   type="button"
                   onClick={handleCreateNewUser}
                   className="woopi-ai-button-primary"
+                  disabled={!newUserData.name.trim() || !newUserData.email.trim() || !newUserData.password || !newUserData.confirmPassword}
                 >
                   <UserPlus className="w-4 h-4 mr-2" />
                   Criar e Adicionar ao Time

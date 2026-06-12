@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Checkbox } from '../ui/checkbox';
 
 import { useUserManagement } from './useUserManagement';
+import { SubmitButton } from '../ui/submit-button';
 import { toast } from 'sonner@2.0.3';
 
 export function UserFormPage() {
@@ -44,6 +45,8 @@ export function UserFormPage() {
 
   // UI state
   const [showPassword, setShowPassword] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [initialSnapshot, setInitialSnapshot] = useState<string | null>(null);
   const [teamSearchTerm, setTeamSearchTerm] = useState('');
   const [roleSearchTerm, setRoleSearchTerm] = useState('');
   const [showCreateTeamForm, setShowCreateTeamForm] = useState(false);
@@ -57,56 +60,60 @@ export function UserFormPage() {
     if (isEditing && id) {
       const user = users.find(u => u.id === parseInt(id));
       if (user) {
-        setFormData({
+        const loaded = {
           name: user.name,
           email: user.email,
           password: '',
           confirmPassword: '',
           selectedTeams: user.teams
-        });
+        };
+        setFormData(loaded);
+        setInitialSnapshot(JSON.stringify(loaded));
       }
     }
   }, [id, isEditing, users]);
 
-  const handleSave = () => {
-    if (!formData.name || !formData.email) {
-      toast.error('Preencha todos os campos obrigatórios');
-      return;
-    }
+  const isFormValid = () => {
+    if (!formData.name.trim() || !formData.email.trim()) return false;
+    if (!isEditing && (!formData.password || !formData.confirmPassword)) return false;
+    if (formData.password && formData.password !== formData.confirmPassword) return false;
+    return true;
+  };
 
-    if (!isEditing && (!formData.password || !formData.confirmPassword)) {
-      toast.error('Senha é obrigatória para novos usuários');
-      return;
-    }
+  // Na edição, só habilita salvar quando algo mudou em relação ao estado carregado.
+  const isDirty = !isEditing || (initialSnapshot !== null && JSON.stringify(formData) !== initialSnapshot);
 
-    if (formData.password && formData.password !== formData.confirmPassword) {
-      toast.error('As senhas não conferem');
-      return;
-    }
+  const handleSave = async () => {
+    if (!isFormValid() || !isDirty) return;
 
-    if (isEditing) {
-      updateUser(parseInt(id!), {
-        name: formData.name,
-        email: formData.email,
-        roles: [], // User roles will be managed through team association
-        teams: formData.selectedTeams
-      });
-      toast.success('Usuário atualizado com sucesso');
-    } else {
-      createUser({
-        name: formData.name,
-        email: formData.email,
-        phone: '',
-        roles: [], // User roles will be managed through team association
-        teams: formData.selectedTeams,
-        status: 'Ativo',
-        lastLogin: null,
-        documentsCount: 0
-      });
-      toast.success('Usuário criado com sucesso');
+    setIsSaving(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      if (isEditing) {
+        updateUser(parseInt(id!), {
+          name: formData.name,
+          email: formData.email,
+          roles: [],
+          teams: formData.selectedTeams
+        });
+        toast.success('Usuário atualizado com sucesso');
+      } else {
+        createUser({
+          name: formData.name,
+          email: formData.email,
+          phone: '',
+          roles: [],
+          teams: formData.selectedTeams,
+          status: 'Ativo',
+          lastLogin: null,
+          documentsCount: 0
+        });
+        toast.success('Usuário criado com sucesso');
+      }
+      navigate('/gestaodeusuarios');
+    } finally {
+      setIsSaving(false);
     }
-
-    navigate('/gestaodeusuarios');
   };
 
   const handleCancel = () => {
@@ -248,13 +255,20 @@ export function UserFormPage() {
           >
             Cancelar
           </Button>
-          <Button 
+          <SubmitButton
             onClick={handleSave}
-            className="woopi-ai-button-primary"
+            isLoading={isSaving}
+            disabled={!isFormValid() || !isDirty}
+            disabledHint={
+              isEditing && !isDirty
+                ? 'Nenhuma alteração para salvar'
+                : !isFormValid()
+                ? 'Preencha os campos obrigatórios'
+                : undefined
+            }
           >
-            <Save className="w-4 h-4 mr-2" />
             {isEditing ? 'Salvar Alterações' : 'Criar Usuário'}
-          </Button>
+          </SubmitButton>
         </div>
       </div>
 
@@ -544,6 +558,7 @@ export function UserFormPage() {
                 type="button"
                 onClick={handleCreateNewTeam}
                 className="woopi-ai-button-primary"
+                disabled={!newTeamData.name.trim()}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Criar Time

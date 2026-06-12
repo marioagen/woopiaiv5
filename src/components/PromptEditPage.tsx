@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
 import { Checkbox } from './ui/checkbox';
+import { SubmitButton } from './ui/submit-button';
 import { toast } from 'sonner@2.0.3';
 import { mockAgents, generateOutputKey } from '../data/mockAgents';
 
@@ -55,6 +56,7 @@ export function PromptEditPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [hasEdited, setHasEdited] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
+  const [initialSnapshot, setInitialSnapshot] = useState<string | null>(null);
 
   // External consult state
   const [enableExternalConsult, setEnableExternalConsult] = useState(false);
@@ -86,6 +88,16 @@ export function PromptEditPage() {
       };
       setFormData(promptData);
       setWasGlobal(isGlobalPrompt);
+      setInitialSnapshot(
+        JSON.stringify({
+          name: promptData.name,
+          description: promptData.description,
+          content: promptData.content,
+          isGlobal: promptData.isGlobal,
+          enableExternalConsult: false,
+          selectedEndpoints: [] as number[],
+        })
+      );
     }
   }, [isEditing, isCloning, id, locationState]);
 
@@ -96,7 +108,26 @@ export function PromptEditPage() {
     }
   };
 
+  const isFormValid = () => formData.name.trim() !== '' && formData.content.trim() !== '';
+
+  // Inclui todos os campos editáveis (incluindo consulta externa) na detecção de alteração.
+  const serializePrompt = () =>
+    JSON.stringify({
+      name: formData.name,
+      description: formData.description,
+      content: formData.content,
+      isGlobal: formData.isGlobal,
+      enableExternalConsult,
+      selectedEndpoints: selectedEndpoints.map(e => e.id).sort((a, b) => a - b),
+    });
+
+  // Na edição, só habilita salvar quando algo mudou em relação ao estado carregado.
+  // Clonar é um fluxo de criação (form pré-preenchido), então permanece sempre habilitável.
+  const isDirty = !isEditing || (initialSnapshot !== null && serializePrompt() !== initialSnapshot);
+
   const handleSave = async () => {
+    if (isEditing && !isDirty) return;
+
     if (!formData.name.trim()) {
       toast.error('Nome do prompt é obrigatório');
       return;
@@ -232,14 +263,20 @@ export function PromptEditPage() {
               Cancelar
             </Button>
           )}
-          <Button 
+          <SubmitButton
             onClick={handleSave}
-            disabled={isSaving}
-            className="woopi-ai-button-primary"
+            isLoading={isSaving}
+            disabled={!isFormValid() || !isDirty}
+            disabledHint={
+              isEditing && !isDirty
+                ? 'Nenhuma alteração para salvar'
+                : !isFormValid()
+                ? 'Preencha o nome e o conteúdo do prompt'
+                : undefined
+            }
           >
-            <Save className="w-4 h-4 mr-2" />
-            {isSaving ? 'Salvando...' : 'Salvar'}
-          </Button>
+            Salvar
+          </SubmitButton>
         </div>
       </div>
 

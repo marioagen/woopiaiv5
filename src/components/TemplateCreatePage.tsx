@@ -6,6 +6,7 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ArrowLeft, Trash2, ChevronDown } from 'lucide-react';
+import { SubmitButton } from './ui/submit-button';
 
 interface WorkflowStep {
   id: string;
@@ -64,15 +65,23 @@ export function TemplateCreatePage() {
     navigate('/templates');
   };
 
-  const handleSave = () => {
-    // TODO: Implementar lógica de salvamento
-    console.log('Salvando template...', {
-      templateName,
-      documentType,
-      team,
-      workflowSteps
-    });
-    navigate('/templates');
+  const isFormValid = () => templateName.trim() !== '';
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      console.log('Salvando template...', {
+        templateName,
+        documentType,
+        team,
+        workflowSteps
+      });
+      navigate('/templates');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -263,12 +272,14 @@ export function TemplateCreatePage() {
           >
             Cancelar
           </Button>
-          <Button
+          <SubmitButton
             onClick={handleSave}
+            isLoading={isSaving}
+            disabled={!isFormValid()}
             className="px-6 woopi-ai-button-primary"
           >
             Salvar
-          </Button>
+          </SubmitButton>
         </div>
       </div>
     </div>

@@ -17,6 +17,7 @@ import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Switch } from './ui/switch';
+import { SubmitButton } from './ui/submit-button';
 import { toast } from 'sonner@2.0.3';
 import { getWorkflowById, mockCurrentUser } from '../data/mockWorkflowVersions';
 import { generateVersionNumber, generateHash, createAuditEvent } from '../types/workflow-version';
@@ -44,6 +45,7 @@ export function WorkflowVersionCreatePage() {
   });
 
   const [newTag, setNewTag] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   if (!workflow) {
     return (
@@ -90,52 +92,57 @@ export function WorkflowVersionCreatePage() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!baseVersion) {
       toast.error('Versão base não encontrada');
       return;
     }
 
-    // Create new version
-    const newVersion = {
-      id: `wf_${workflow.id}_v${Date.now()}`,
-      workflowId: workflow.id,
-      versionNumber: newVersionNumber,
-      versionName: formData.versionName || undefined,
-      status: 'draft' as const,
-      lifecycle: {
-        createdAt: new Date(),
-        createdBy: mockCurrentUser
-      },
-      documentation: {
-        changelog: {
-          summary: formData.changelogSummary,
-          detailedChanges: formData.changelogDetailed,
-          breakingChanges: formData.breakingChanges,
-          breakingChangesDescription: formData.breakingChanges ? formData.breakingChangesDescription : undefined
+    setIsSaving(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 700));
+      const newVersion = {
+        id: `wf_${workflow.id}_v${Date.now()}`,
+        workflowId: workflow.id,
+        versionNumber: newVersionNumber,
+        versionName: formData.versionName || undefined,
+        status: 'draft' as const,
+        lifecycle: {
+          createdAt: new Date(),
+          createdBy: mockCurrentUser
         },
-        businessJustification: formData.businessJustification || undefined,
-        technicalNotes: formData.technicalNotes || undefined
-      },
-      audit: {
-        trail: [
-          createAuditEvent(
-            mockCurrentUser.id,
-            mockCurrentUser.name,
-            'created',
-            `Nova versão ${newVersionNumber} criada baseada na versão ${baseVersion.versionNumber}`
-          )
-        ]
-      },
-      definition: { ...baseVersion.definition }, // Clone definition
-      hash: generateHash(baseVersion.definition),
-      tags: formData.tags,
-      category: formData.category,
-      department: formData.department
-    };
+        documentation: {
+          changelog: {
+            summary: formData.changelogSummary,
+            detailedChanges: formData.changelogDetailed,
+            breakingChanges: formData.breakingChanges,
+            breakingChangesDescription: formData.breakingChanges ? formData.breakingChangesDescription : undefined
+          },
+          businessJustification: formData.businessJustification || undefined,
+          technicalNotes: formData.technicalNotes || undefined
+        },
+        audit: {
+          trail: [
+            createAuditEvent(
+              mockCurrentUser.id,
+              mockCurrentUser.name,
+              'created',
+              `Nova versão ${newVersionNumber} criada baseada na versão ${baseVersion.versionNumber}`
+            )
+          ]
+        },
+        definition: { ...baseVersion.definition },
+        hash: generateHash(baseVersion.definition),
+        tags: formData.tags,
+        category: formData.category,
+        department: formData.department
+      };
 
-    toast.success(`Versão ${newVersionNumber} criada com sucesso!`);
-    navigate(`/documentos/workflows/${id}/versoes/${newVersion.id}/editar`);
+      toast.success(`Versão ${newVersionNumber} criada com sucesso!`);
+      navigate(`/documentos/workflows/${id}/versoes/${newVersion.id}/editar`);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAddTag = () => {
@@ -562,10 +569,13 @@ export function WorkflowVersionCreatePage() {
               <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
           ) : (
-            <Button onClick={handleSave} className="woopi-ai-button-primary">
-              <Save className="w-4 h-4 mr-2" />
+            <SubmitButton
+              onClick={handleSave}
+              isLoading={isSaving}
+              loadingLabel="Criando versão..."
+            >
               Criar Versão
-            </Button>
+            </SubmitButton>
           )}
         </div>
       </div>

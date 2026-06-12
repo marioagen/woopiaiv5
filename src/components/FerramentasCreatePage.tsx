@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Textarea } from './ui/textarea';
 import { ArrowLeft, Trash2, ChevronDown, Plus, X } from 'lucide-react';
+import { SubmitButton } from './ui/submit-button';
 
 interface WorkflowStep {
   id: string;
@@ -81,6 +82,7 @@ export function FerramentasCreatePage() {
   // N8N Connector specific fields
   const [n8nUrl, setN8nUrl] = useState('');
   const [n8nApiKey, setN8nApiKey] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Caracteres restantes para o nome da ferramenta
   const remainingChars = 25 - ferramentaName.length;
@@ -89,29 +91,36 @@ export function FerramentasCreatePage() {
     navigate('/ferramentas');
   };
 
-  const handleSave = () => {
-    // TODO: Implementar lógica de salvamento
-    console.log('Salvando ferramenta...', {
-      ferramentaName,
-      toolType,
-      documentType,
-      team,
-      workflowSteps,
-      ...(toolType === 'json-api' && {
-        apiUrl,
-        apiMethod,
-        apiHeaders,
-        inputFields,
-        outputFields
-      }),
-      ...(toolType === 'n8n-connector' && {
-        n8nUrl,
-        n8nApiKey,
-        inputFields,
-        outputFields
-      })
-    });
-    navigate('/ferramentas');
+  const isFormValid = () => ferramentaName.trim() !== '' && toolType !== '';
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      console.log('Salvando ferramenta...', {
+        ferramentaName,
+        toolType,
+        documentType,
+        team,
+        workflowSteps,
+        ...(toolType === 'json-api' && {
+          apiUrl,
+          apiMethod,
+          apiHeaders,
+          inputFields,
+          outputFields
+        }),
+        ...(toolType === 'n8n-connector' && {
+          n8nUrl,
+          n8nApiKey,
+          inputFields,
+          outputFields
+        })
+      });
+      navigate('/ferramentas');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -679,12 +688,14 @@ export function FerramentasCreatePage() {
           >
             Cancelar
           </Button>
-          <Button
+          <SubmitButton
             onClick={handleSave}
+            isLoading={isSaving}
+            disabled={!isFormValid()}
             className="px-6 woopi-ai-button-primary"
           >
             Salvar
-          </Button>
+          </SubmitButton>
         </div>
       </div>
     </div>

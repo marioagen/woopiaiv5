@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { SearchableSelect } from './ui/searchable-select';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
+import { SubmitButton } from './ui/submit-button';
 import { toast } from 'sonner@2.0.3';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
@@ -290,6 +291,8 @@ export function WorkflowFormPage() {
   
   // Slide state (1, 2, ou 3)
   const [currentSlide, setCurrentSlide] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
+  const [initialSnapshot, setInitialSnapshot] = useState<string | null>(null);
   
   // Save confirmation modal state (only for editing)
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -351,12 +354,14 @@ export function WorkflowFormPage() {
     if (isEditing && id) {
       const workflow = mockWorkflows.find(w => w.id === parseInt(id));
       if (workflow) {
-        setFormData({
+        const loaded = {
           nomeWorkflow: workflow.nomeWorkflow,
           descricao: (workflow as any).descricao || '',
           timesAssociados: workflow.timesAssociados,
           etapas: workflow.etapas || []
-        });
+        };
+        setFormData(loaded);
+        setInitialSnapshot(JSON.stringify(loaded));
       }
     } else {
       // Initialize with one default step for new workflows
@@ -441,7 +446,15 @@ export function WorkflowFormPage() {
     }
   };
 
-  const handleSave = () => {
+  const isFormValid = () =>
+    !!formData.nomeWorkflow?.trim() && formData.timesAssociados.length > 0;
+
+  // Na edição, só habilita salvar quando algo mudou em relação ao estado carregado.
+  const isDirty = !isEditing || (initialSnapshot !== null && JSON.stringify(formData) !== initialSnapshot);
+
+  const handleSave = async () => {
+    if (isEditing && !isDirty) return;
+
     if (!formData.nomeWorkflow || formData.timesAssociados.length === 0) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
@@ -456,18 +469,28 @@ export function WorkflowFormPage() {
 
     if (isEditing) {
       if (hasDocumentsInFlow) {
-        // Show confirmation modal for editing workflows with documents in flow
         setShowSaveModal(true);
         return;
       }
-      // No documents in flow, save directly
-      toast.success('Workflow atualizado com sucesso.');
-      navigate('/workflow/gestao');
+      setIsSaving(true);
+      try {
+        await new Promise(resolve => setTimeout(resolve, 600));
+        toast.success('Workflow atualizado com sucesso.');
+        navigate('/workflow/gestao');
+      } finally {
+        setIsSaving(false);
+      }
       return;
     }
 
-    toast.success('Workflow criado com sucesso');
-    navigate('/workflow/gestao');
+    setIsSaving(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      toast.success('Workflow criado com sucesso');
+      navigate('/workflow/gestao');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleConfirmSave = () => {
@@ -804,13 +827,20 @@ export function WorkflowFormPage() {
                 <ChevronLeft className="w-4 h-4 mr-2" />
                 Anterior
               </Button>
-              <Button
+              <SubmitButton
                 onClick={handleSave}
-                className="woopi-ai-button-primary"
+                isLoading={isSaving}
+                disabled={!isFormValid() || !isDirty}
+                disabledHint={
+                  isEditing && !isDirty
+                    ? 'Nenhuma alteração para salvar'
+                    : !isFormValid()
+                    ? 'Preencha o nome e associe ao menos um time'
+                    : undefined
+                }
               >
-                <Save className="w-4 h-4 mr-2" />
                 {isEditing ? 'Salvar Alterações' : 'Criar Workflow'}
-              </Button>
+              </SubmitButton>
             </div>
           </div>
         )}

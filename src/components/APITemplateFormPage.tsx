@@ -6,6 +6,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
+import { SubmitButton } from './ui/submit-button';
 import {
   Select,
   SelectContent,
@@ -73,6 +74,18 @@ interface TestResponse {
   time: number;
   headers: Record<string, string>;
   body: string;
+}
+
+// Serializa os campos editáveis do template para detecção de alterações (dirty state).
+function serializeTemplate(
+  name: string,
+  method: HTTPMethod,
+  url: string,
+  queryParams: QueryParam[],
+  headers: Header[],
+  body: string
+): string {
+  return JSON.stringify({ name, method, url, queryParams, headers, body });
 }
 
 const VARIABLE_REGEX = /\{\{([^}]+)\}\}/g;
@@ -200,6 +213,8 @@ export function APITemplateFormPage() {
   const [headers, setHeaders] = useState<Header[]>([]);
   const [body, setBody] = useState('');
   const [bodyError, setBodyError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [initialSnapshot, setInitialSnapshot] = useState<string | null>(null);
 
   // UI state
   const [showImportCurlDialog, setShowImportCurlDialog] = useState(false);
@@ -310,17 +325,27 @@ export function APITemplateFormPage() {
     if (isEditing) {
       // TODO: Load template from storage
       // Mock data for now
-      setTemplateName('Get User Details');
-      setMethod('GET');
-      setEndpointUrl('https://api.example.com/v1/users/{{userId}}');
-      setQueryParams([
+      const loadedName = 'Get User Details';
+      const loadedMethod: HTTPMethod = 'GET';
+      const loadedUrl = 'https://api.example.com/v1/users/{{userId}}';
+      const loadedQueryParams = [
         { id: '1', key: 'include', value: 'profile' }
-      ]);
-      setHeaders([
+      ];
+      const loadedHeaders = [
         { id: '1', key: 'Authorization', value: 'Bearer {{token}}', secret: true },
         { id: '2', key: 'Content-Type', value: 'application/json', secret: false }
-      ]);
-      setBody('{\n  "key": "{{variable}}"\n}');
+      ];
+      const loadedBody = '{\n  "key": "{{variable}}"\n}';
+
+      setTemplateName(loadedName);
+      setMethod(loadedMethod);
+      setEndpointUrl(loadedUrl);
+      setQueryParams(loadedQueryParams);
+      setHeaders(loadedHeaders);
+      setBody(loadedBody);
+      setInitialSnapshot(
+        serializeTemplate(loadedName, loadedMethod, loadedUrl, loadedQueryParams, loadedHeaders, loadedBody)
+      );
     }
   }, [isEditing, id]);
 
@@ -433,8 +458,17 @@ export function APITemplateFormPage() {
     }
   };
 
-  const handleSave = () => {
-    // Validations
+  const isFormValid = () => templateName.trim() !== '' && endpointUrl.trim() !== '' && !bodyError;
+
+  // Na edição, só habilita salvar quando algo mudou em relação ao template carregado.
+  const isDirty =
+    !isEditing ||
+    (initialSnapshot !== null &&
+      serializeTemplate(templateName, method, endpointUrl, queryParams, headers, body) !== initialSnapshot);
+
+  const handleSave = async () => {
+    if (isEditing && !isDirty) return;
+
     if (!templateName.trim()) {
       toast.error('Nome do template é obrigatório');
       return;
@@ -450,21 +484,26 @@ export function APITemplateFormPage() {
       return;
     }
 
-    const template: APITemplate = {
-      id: isEditing ? parseInt(id!) : Date.now(),
-      name: templateName,
-      method,
-      url: endpointUrl,
-      queryParams: queryParams.filter(p => p.key.trim()),
-      headers: headers.filter(h => h.key.trim()),
-      body: body.trim()
-    };
+    setIsSaving(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      const template: APITemplate = {
+        id: isEditing ? parseInt(id!) : Date.now(),
+        name: templateName,
+        method,
+        url: endpointUrl,
+        queryParams: queryParams.filter(p => p.key.trim()),
+        headers: headers.filter(h => h.key.trim()),
+        body: body.trim()
+      };
 
-    // TODO: Save to storage
-    console.log('Saving template:', template);
-    
-    toast.success(isEditing ? 'Template atualizado com sucesso!' : 'Template criado com sucesso!');
-    navigate('/templates/api');
+      console.log('Saving template:', template);
+      
+      toast.success(isEditing ? 'Template atualizado com sucesso!' : 'Template criado com sucesso!');
+      navigate('/templates/api');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -511,12 +550,20 @@ export function APITemplateFormPage() {
               >
                 Cancel
               </Button>
-              <Button
+              <SubmitButton
                 onClick={handleSave}
-                className="woopi-ai-button-primary"
+                isLoading={isSaving}
+                disabled={!isFormValid() || !isDirty}
+                disabledHint={
+                  isEditing && !isDirty
+                    ? 'Nenhuma alteração para salvar'
+                    : !isFormValid()
+                    ? 'Preencha o nome e a URL da requisição'
+                    : undefined
+                }
               >
-                Save Template
-              </Button>
+                {isEditing ? 'Salvar Alterações' : 'Save Template'}
+              </SubmitButton>
             </div>
           </div>
         </div>

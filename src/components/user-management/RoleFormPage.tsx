@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Checkbox } from '../ui/checkbox';
 import { useUserManagement } from './useUserManagement';
+import { SubmitButton } from '../ui/submit-button';
 import { toast } from 'sonner@2.0.3';
 
 // Types for granular permissions
@@ -99,6 +100,15 @@ type WorkflowPermissionsState = {
   documentApproval: { step1: string; step2: string; step3: string };
   clientOnboarding: { stepA: string; stepB: string; stepC: string; stepD: string };
 };
+
+// Serializa apenas os campos que o usuário edita, para detecção de alterações (dirty state).
+function serializeRole(data: { name: string; granularPermissions: unknown; workflowPermissions: unknown }): string {
+  return JSON.stringify({
+    name: data.name,
+    granularPermissions: data.granularPermissions,
+    workflowPermissions: data.workflowPermissions,
+  });
+}
 
 function hasTruthyPermissionValue(value: unknown): boolean {
   if (typeof value === 'boolean') return value;
@@ -196,6 +206,8 @@ export function RoleFormPage() {
   } = useUserManagement();
 
   const [showModulesRequiredAlert, setShowModulesRequiredAlert] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [initialSnapshot, setInitialSnapshot] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -243,25 +255,29 @@ export function RoleFormPage() {
           return;
         }
 
-        setFormData(prev => ({
-          ...prev,
-          name: role.name,
-          screenPermissions: {
-            manageUsers: role.permissions.manageUsers ? 'access' : '',
-            manageTeams: role.permissions.manageTeams ? 'access' : '',
-            manageRoles: role.permissions.manageRoles ? 'access' : '',
-            uploadDocuments: role.permissions.uploadDocuments ? 'access' : '',
-            extractData: role.permissions.extractData ? 'access' : '',
-            documentTypes: role.permissions.documentTypes ? 'access' : '',
-            questions: role.permissions.questions ? 'access' : '',
-            questionnaires: role.permissions.questionnaires ? 'access' : '',
-            prompts: role.permissions.prompts ? 'access' : '',
-            ferramentas: role.permissions.ferramentas ? 'access' : '',
-            fluxoFerramentas: role.permissions.fluxoFerramentas ? 'access' : '',
-            workflows: role.permissions.workflows ? 'access' : '',
-            gestaoEsteiras: role.permissions.gestaoEsteiras ? 'access' : ''
-          },
-        }));
+        setFormData(prev => {
+          const next = {
+            ...prev,
+            name: role.name,
+            screenPermissions: {
+              manageUsers: role.permissions.manageUsers ? 'access' : '',
+              manageTeams: role.permissions.manageTeams ? 'access' : '',
+              manageRoles: role.permissions.manageRoles ? 'access' : '',
+              uploadDocuments: role.permissions.uploadDocuments ? 'access' : '',
+              extractData: role.permissions.extractData ? 'access' : '',
+              documentTypes: role.permissions.documentTypes ? 'access' : '',
+              questions: role.permissions.questions ? 'access' : '',
+              questionnaires: role.permissions.questionnaires ? 'access' : '',
+              prompts: role.permissions.prompts ? 'access' : '',
+              ferramentas: role.permissions.ferramentas ? 'access' : '',
+              fluxoFerramentas: role.permissions.fluxoFerramentas ? 'access' : '',
+              workflows: role.permissions.workflows ? 'access' : '',
+              gestaoEsteiras: role.permissions.gestaoEsteiras ? 'access' : ''
+            },
+          };
+          setInitialSnapshot(serializeRole(next));
+          return next;
+        });
       }
     }
   }, [id, isEditing, roles, navigate]);
@@ -430,7 +446,16 @@ export function RoleFormPage() {
     });
   };
 
-  const handleSave = () => {
+  const isFormValid = () =>
+    formData.name.trim() !== '' &&
+    hasAtLeastOneModuleSelected(formData.granularPermissions, formData.workflowPermissions);
+
+  // Na edição, só habilita salvar quando o perfil (nome ou permissões) mudou.
+  const isDirty = !isEditing || (initialSnapshot !== null && serializeRole(formData) !== initialSnapshot);
+
+  const handleSave = async () => {
+    if (isEditing && !isDirty) return;
+
     if (!formData.name.trim()) {
       toast.error('Informe um nome para o perfil antes de salvar.');
       return;
@@ -442,7 +467,10 @@ export function RoleFormPage() {
       return;
     }
 
-    const gp = formData.granularPermissions;
+    setIsSaving(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      const gp = formData.granularPermissions;
     const permissionsObject = {
       uploadDocuments: gp.documentos.view || gp.documentos.edit,
       mergeDocuments: false,
@@ -483,6 +511,9 @@ export function RoleFormPage() {
     }
 
     navigate('/gestaodeusuarios?tab=roles');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -557,13 +588,20 @@ export function RoleFormPage() {
           >
             Cancelar
           </Button>
-          <Button
+          <SubmitButton
             onClick={handleSave}
-            className="woopi-ai-button-primary"
+            isLoading={isSaving}
+            disabled={!isFormValid() || !isDirty}
+            disabledHint={
+              isEditing && !isDirty
+                ? 'Nenhuma alteração para salvar'
+                : !isFormValid()
+                ? 'Informe o nome e selecione ao menos um módulo'
+                : undefined
+            }
           >
-            <Save className="w-4 h-4 mr-2" />
             {isEditing ? 'Salvar Alterações' : 'Criar Perfil'}
-          </Button>
+          </SubmitButton>
         </div>
       </div>
 

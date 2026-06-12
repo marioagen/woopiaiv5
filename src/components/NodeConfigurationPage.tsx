@@ -32,6 +32,7 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { SubmitButton } from './ui/submit-button';
 import { toast } from 'sonner@2.0.3';
 import { mockAgents } from '../data/mockAgents';
 
@@ -406,6 +407,7 @@ export function NodeConfigurationPage() {
     initialConfig?.apiMethod || 'GET'
   );
   const [apiUrl, setApiUrl] = useState(initialConfig?.apiUrl || '');
+  const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'params' | 'headers'>('params');
   const [params, setParams] = useState<{ key: string; value: string }[]>(
     initialConfig?.params || [{ key: '', value: '' }]
@@ -473,7 +475,7 @@ export function NodeConfigurationPage() {
     navigate(`/documentos/workflow/automacao/${stageId}`);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const updatedConfig = {
       ...config,
       apiMethod,
@@ -484,13 +486,9 @@ export function NodeConfigurationPage() {
       response
     };
     
-    // Limpar dados do sessionStorage ao salvar
     sessionStorage.removeItem(storageKey);
-    
-    // Aqui você salvaria no backend ou state management
     toast.success(`Configuração de ${tool?.name} salva com sucesso`);
     
-    // Voltar para a página do fluxo
     navigate(`/documentos/workflow/automacao/${stageId}`, {
       state: { nodeId, updatedConfig }
     });
@@ -1673,13 +1671,14 @@ export function NodeConfigurationPage() {
                 </div>
               </div>
             </div>
-            <Button 
+            <SubmitButton
               onClick={handleSave}
+              isLoading={isSaving}
+              loadingLabel="Salvando..."
               className="woopi-ai-button-primary flex items-center gap-2 h-12 px-6 text-base"
             >
-              <Save className="w-5 h-5" />
               Salvar Configuração
-            </Button>
+            </SubmitButton>
           </div>
         </div>
       </div>

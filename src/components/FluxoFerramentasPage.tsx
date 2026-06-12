@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
+import { SubmitButton } from './ui/submit-button';
 import { toast } from 'sonner@2.0.3';
 import { 
   ReactFlow, 
@@ -224,6 +225,7 @@ export function FluxoFerramentasPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [isSaving, setIsSaving] = useState(false);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   // Get workflow stage info from navigation state
@@ -234,9 +236,15 @@ export function FluxoFerramentasPage() {
     [setEdges]
   );
 
-  const handleSave = () => {
-    toast.success('Fluxo de ferramentas salvo com sucesso!');
-    navigate(-1); // Go back to previous page
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      toast.success('Fluxo de ferramentas salvo com sucesso!');
+      navigate(-1);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleBack = () => {
@@ -308,13 +316,13 @@ export function FluxoFerramentasPage() {
           >
             Cancelar
           </Button>
-          <Button 
+          <SubmitButton
             onClick={handleSave}
-            className="woopi-ai-button-primary"
+            isLoading={isSaving}
+            loadingLabel="Incluindo..."
           >
-            <Save className="w-4 h-4 mr-2" />
             Incluir
-          </Button>
+          </SubmitButton>
         </div>
       </div>
 
