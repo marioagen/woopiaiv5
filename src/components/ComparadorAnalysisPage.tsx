@@ -13,11 +13,17 @@ import {
   PanelLeftClose,
   PanelRightClose,
   ListChecks,
+  ArrowLeft,
+  History,
+  PanelLeft,
+  PanelRight,
+  Columns2,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
+import { Separator } from './ui/separator';
 import {
   Tooltip,
   TooltipContent,
@@ -1049,6 +1055,26 @@ export function ComparadorAnalysisPage() {
   const [col1Collapsed, setCol1Collapsed] = useState(false);
   const [col2Collapsed, setCol2Collapsed] = useState(false);
   const [col3Collapsed, setCol3Collapsed] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+
+  // Derived view mode for the toggle — mirrors extraction page semantics:
+  // 'document' = V1 only, 'split' = all, 'fields' = V2+diff only
+  const comparadorViewMode: 'document' | 'split' | 'fields' =
+    !col1Collapsed && col2Collapsed && col3Collapsed
+      ? 'document'
+      : col1Collapsed && !col2Collapsed && !col3Collapsed
+      ? 'fields'
+      : 'split';
+
+  const handleComparadorViewMode = (mode: 'document' | 'split' | 'fields') => {
+    if (mode === 'document') {
+      setCol1Collapsed(false); setCol2Collapsed(true); setCol3Collapsed(true);
+    } else if (mode === 'fields') {
+      setCol1Collapsed(true); setCol2Collapsed(false); setCol3Collapsed(false);
+    } else {
+      setCol1Collapsed(false); setCol2Collapsed(false); setCol3Collapsed(false);
+    }
+  };
 
   // Mobile active tab
   const [mobileTab, setMobileTab] = useState<MobileTab>('v1');
@@ -1140,23 +1166,86 @@ export function ComparadorAnalysisPage() {
   return (
     <TooltipProvider>
       <div className="h-full flex flex-col bg-gray-50 dark:bg-[#1f2132]">
-        {/* Top Header Bar */}
-        <div className="h-12 bg-white dark:bg-[#292f4c] border-b border-gray-200 dark:border-[#393e5c] flex items-center justify-between px-3 sm:px-4 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <FileDiff className="w-5 h-5 text-[#0073ea]" />
-            <span className="text-sm italic text-[#0073ea] hidden sm:inline">Comparador de documentos</span>
-            <span className="text-sm italic text-[#0073ea] sm:hidden">DocDiff</span>
+        {/* Header */}
+        <div className="flex-shrink-0 p-4 md:p-6 border-b border-woopi-ai-border bg-white dark:bg-[#1a1b2e]">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/documentos/comparador')}
+                className="flex items-center gap-2 text-woopi-ai-gray hover:text-woopi-ai-dark-gray"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Comparador</span>
+                <span className="sm:hidden">Voltar</span>
+              </Button>
+              <Separator orientation="vertical" className="h-6" />
+              <div className="flex items-center gap-3">
+                <div>
+                  <h1 className="text-xl md:text-2xl font-bold woopi-ai-text-primary">
+                    Comparador de Documentos
+                  </h1>
+                  <p className="woopi-ai-text-secondary text-sm md:text-base">
+                    Compare e analise as diferenças entre versões de documentos
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsHistoryModalOpen(true)}
+                  className="flex items-center gap-2 border-woopi-ai-border hover:bg-woopi-ai-light-gray"
+                >
+                  <History className="w-4 h-4" />
+                  <span className="hidden lg:inline">Histórico de alterações</span>
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* View Mode Toggle — V1 only / split / V2+diff only */}
+              <div className="flex items-center gap-1 bg-gray-100 dark:bg-[#1f2132] p-1 rounded-lg">
+                <Button
+                  variant={comparadorViewMode === 'document' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleComparadorViewMode('document')}
+                  className="h-8 px-3"
+                  title="Visualizar apenas V1 (original)"
+                >
+                  <PanelLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={comparadorViewMode === 'split' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleComparadorViewMode('split')}
+                  className="h-8 px-3"
+                  title="Visualização dividida (todas as colunas)"
+                >
+                  <Columns2 className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={comparadorViewMode === 'fields' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleComparadorViewMode('fields')}
+                  className="h-8 px-3"
+                  title="Visualizar apenas V2 e diferenças"
+                >
+                  <PanelRight className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/documentos/comparador')}
+                className="flex items-center gap-2"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span className="hidden sm:inline">Nova Comparação</span>
+                <span className="sm:hidden">Nova</span>
+              </Button>
+            </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/documentos/comparador')}
-            className="gap-1.5 text-xs"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Nova Comparação</span>
-            <span className="sm:hidden">Nova</span>
-          </Button>
         </div>
 
         {/* ─── Mobile / Tablet: Tab-based layout (< lg) ─── */}

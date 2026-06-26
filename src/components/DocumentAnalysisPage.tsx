@@ -23,6 +23,7 @@ import {
   X,
   ShieldCheck,
   Download,
+  History,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
@@ -526,6 +527,7 @@ export function DocumentAnalysisPage() {
 
   // Reprovar modal state
   const [isReprovarModalOpen, setIsReprovarModalOpen] = useState(false);
+  const [isDocumentHistoryModalOpen, setIsDocumentHistoryModalOpen] = useState(false);
   const [reprovarJustificativa, setReprovarJustificativa] = useState('');
   const [reprovarEtapa, setReprovarEtapa] = useState('');
   const [reprovarAtribuir, setReprovarAtribuir] = useState('');
@@ -569,7 +571,7 @@ export function DocumentAnalysisPage() {
   return (
     <div className="h-screen flex flex-col document-analysis-page">
       {/* Header */}
-      <div className="flex-shrink-0 p-4 md:p-6 border-b border-woopi-ai-border bg-white">
+      <div className="flex-shrink-0 p-4 md:p-6 border-b border-woopi-ai-border bg-white dark:bg-[#1a1b2e]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Button
@@ -587,19 +589,30 @@ export function DocumentAnalysisPage() {
               <span className="sm:hidden">Voltar</span>
             </Button>
             <Separator orientation="vertical" className="h-6" />
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold woopi-ai-text-primary">
-                Análise de Documento
-              </h1>
-              <p className="woopi-ai-text-secondary text-sm md:text-base">
-                Revise e confirme os dados extraídos pela IA
-              </p>
+            <div className="flex items-center gap-3">
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold woopi-ai-text-primary">
+                  Análise de Documento
+                </h1>
+                <p className="woopi-ai-text-secondary text-sm md:text-base">
+                  Revise e confirme os dados extraídos pela IA
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsDocumentHistoryModalOpen(true)}
+                className="flex items-center gap-2 border-woopi-ai-border hover:bg-woopi-ai-light-gray"
+              >
+                <History className="w-4 h-4" />
+                <span className="hidden lg:inline">Histórico de alterações</span>
+              </Button>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
             {/* View Mode Toggle */}
-            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-[#1f2132] p-1 rounded-lg">
               <Button
                 variant={viewMode === 'document' ? 'default' : 'ghost'}
                 size="sm"

@@ -179,6 +179,8 @@ export function DashboardPage() {
   const [showCustomPicker, setShowCustomPicker] = useState(false);
   const [prevPeriod, setPrevPeriod] = useState('current-month');
   const pickerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
 
@@ -188,6 +190,14 @@ export function DashboardPage() {
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const handleScroll = () => setIsScrolled(el.scrollTop > 8);
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => el.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
@@ -255,13 +265,20 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="p-4 md:p-6">
-        <div className="max-w-7xl mx-auto space-y-5">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+    <div className="flex flex-col h-full">
+
+      {/* ── Page header — shrink-0 keeps it fully outside the scroll container ── */}
+      <div className={`shrink-0 border-b bg-background transition-[box-shadow,border-color] duration-200 ease-out ${
+        isScrolled
+          ? 'shadow-[0_2px_10px_0_rgba(0,0,0,0.10)] border-border'
+          : 'shadow-none border-border/60'
+      }`}>
+        <div className="px-4 md:px-6 pt-4 pb-3 max-w-7xl mx-auto">
+
+          {/* Title row */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2.5">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Dashboard de Consumo e Bilhetagem</h1>
+              <h1 className="text-2xl font-bold text-foreground leading-tight">Dashboard de Consumo e Bilhetagem</h1>
               <p className="text-sm text-muted-foreground mt-0.5">Woopi AI</p>
             </div>
             <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 px-4 py-2 text-right min-w-[180px]">
@@ -272,7 +289,7 @@ export function DashboardPage() {
           </div>
 
           {/* Date range */}
-          <div className="text-xs text-muted-foreground">{displayDateRange}</div>
+          <div className="text-xs text-muted-foreground mb-2.5">{displayDateRange}</div>
 
           {/* Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -360,6 +377,13 @@ export function DashboardPage() {
             <span className="text-xs text-muted-foreground">Atualização automática a cada 5 minutos</span>
           </div>
 
+        </div>
+      </div>
+
+      {/* ── Scrollable content — owns its own scroll context ── */}
+      <div ref={scrollRef} className="flex-1 overflow-auto p-4 md:p-6">
+        <div className="max-w-7xl mx-auto space-y-5">
+
           {/* Total WTC hero */}
           <div className="bg-card rounded-xl border border-border shadow-sm p-6 text-center">
             <div className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground mb-1">
@@ -444,8 +468,10 @@ export function DashboardPage() {
               chartColors={chartColors}
             />
           </div>
+
         </div>
       </div>
+
     </div>
   );
 }
