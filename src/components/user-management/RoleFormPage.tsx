@@ -629,7 +629,7 @@ export function RoleFormPage() {
 
             {/* Granular Permissions */}
             <div className="space-y-2">
-              <Label>Permissões por Módulo</Label>
+              <Label>Permissões por Módulo <span className="text-muted-foreground font-normal">(pelo menos uma permissão deve estar selecionada)</span></Label>
               {showModulesRequiredAlert && (
                 <div
                   role="alert"
@@ -1060,7 +1060,18 @@ export function RoleFormPage() {
                     </AccordionContent>
                   </AccordionItem>
 
-                  {/* ===== ESTEIRAS DE PROCESSAMENTO (WORKFLOW) ===== */}
+                </Accordion>
+              </div>
+            </div>
+
+            {/* ── Esteiras de Processamento — separate optional section ── */}
+            <div className="space-y-2">
+              <Label>
+                Esteiras de Processamento{' '}
+                <span className="text-muted-foreground font-normal">(campos opcionais)</span>
+              </Label>
+              <div className="border rounded-md p-4 bg-muted space-y-3">
+                <Accordion type="multiple" className="w-full">
                   <AccordionItem value="esteirasProcessamento" className="border rounded-md bg-card">
                     <AccordionTrigger className="px-4 hover:no-underline">
                       <div className="flex items-center gap-2 flex-1">
