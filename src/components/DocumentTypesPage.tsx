@@ -409,7 +409,7 @@ export function DocumentTypesPage() {
       </AlertDialogTrigger>
       <AlertDialogContent className="max-w-md mx-4">
         <AlertDialogHeader className="text-center">
-          <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+          <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
             <Trash2 className="w-6 h-6 text-red-600" />
           </div>
           <AlertDialogTitle className="text-woopi-ai-dark-gray">
@@ -444,7 +444,7 @@ export function DocumentTypesPage() {
       </AlertDialogTrigger>
       <AlertDialogContent className="max-w-md mx-4">
         <AlertDialogHeader className="text-center">
-          <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+          <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
             <Trash2 className="w-6 h-6 text-red-600" />
           </div>
           <AlertDialogTitle className="text-woopi-ai-dark-gray">
@@ -626,16 +626,16 @@ export function DocumentTypesPage() {
         <CardContent className="p-0">
           {/* Bulk Delete Button - Only show when items are selected */}
           {selectedTypes.length > 0 && (
-            <div className="m-6 mb-0 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="m-6 mb-0 p-3 bg-slate-900 border border-[#8a1a27] dark:border-[#8a1a27] rounded-lg">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-red-700">
+                <span className="text-sm text-white/90 font-medium">
                   {selectedTypes.length} item(s) selecionado(s)
                 </span>
                 <BulkDeleteConfirmationDialog>
                   <Button 
                     variant="destructive" 
                     size="sm"
-                    className="bg-red-600 hover:bg-red-700 text-white"
+                    className="bg-white/20 hover:bg-white/30 border border-white/30 text-white"
                   >
                     <Trash2 className="w-4 h-4 mr-1" />
                     Excluir
@@ -764,16 +764,16 @@ export function DocumentTypesPage() {
           <div className="block md:hidden p-4">
             {/* Bulk Delete Button for Mobile */}
             {selectedTypes.length > 0 && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="mb-4 p-3 bg-[#b22234] border border-[#8a1a27] dark:bg-[#b22234] dark:border-[#8a1a27] rounded-lg">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-red-700">
+                  <span className="text-sm text-white/90 font-medium">
                     {selectedTypes.length} item(s) selecionado(s)
                   </span>
                   <BulkDeleteConfirmationDialog>
                     <Button 
                       variant="destructive" 
                       size="sm"
-                      className="bg-red-600 hover:bg-red-700 text-white"
+                      className="bg-white/20 hover:bg-white/30 border border-white/30 text-white"
                     >
                       <Trash2 className="w-4 h-4 mr-1" />
                       Excluir

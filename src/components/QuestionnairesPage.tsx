@@ -458,7 +458,7 @@ export function QuestionnairesPage() {
       </AlertDialogTrigger>
       <AlertDialogContent className="max-w-md mx-4">
         <AlertDialogHeader className="text-center">
-          <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+          <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
             <Trash2 className="w-6 h-6 text-red-600" />
           </div>
           <AlertDialogTitle className="text-woopi-ai-dark-gray">
@@ -493,7 +493,7 @@ export function QuestionnairesPage() {
       </AlertDialogTrigger>
       <AlertDialogContent className="max-w-md mx-4">
         <AlertDialogHeader className="text-center">
-          <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+          <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
             <Trash2 className="w-6 h-6 text-red-600" />
           </div>
           <AlertDialogTitle className="text-woopi-ai-dark-gray">
