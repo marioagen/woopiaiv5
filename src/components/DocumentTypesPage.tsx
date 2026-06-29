@@ -626,20 +626,22 @@ export function DocumentTypesPage() {
         <CardContent className="p-0">
           {/* Bulk Delete Button - Only show when items are selected */}
           {selectedTypes.length > 0 && (
-            <div className="m-6 mb-0 p-3 bg-slate-900 border border-[#8a1a27] dark:border-[#8a1a27] rounded-lg">
+            <div className="m-6 mb-0 p-3 bg-[#b22234]/10 dark:bg-slate-900 border border-[#b22234]/40 dark:border-[#8a1a27] rounded-lg">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-white/90 font-medium">
+                <span className="text-sm text-[#8a1a27] dark:text-white/90 font-medium">
                   {selectedTypes.length} item(s) selecionado(s)
                 </span>
                 <BulkDeleteConfirmationDialog>
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    className="bg-white/20 hover:bg-white/30 border border-white/30 text-white"
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 h-8 rounded-md px-3 text-sm font-medium text-white border border-[#8a1a27] transition-colors"
+                    style={{ backgroundColor: '#b22234' }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#8a1a27')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#b22234')}
                   >
-                    <Trash2 className="w-4 h-4 mr-1" />
+                    <Trash2 className="w-4 h-4" />
                     Excluir
-                  </Button>
+                  </button>
                 </BulkDeleteConfirmationDialog>
               </div>
             </div>
@@ -773,7 +775,7 @@ export function DocumentTypesPage() {
                     <Button 
                       variant="destructive" 
                       size="sm"
-                      className="bg-white/20 hover:bg-white/30 border border-white/30 text-white"
+                      className="bg-[#8a1a27] hover:bg-[#6e1520] border border-[#6e1520] text-white dark:bg-white/20 dark:hover:bg-white/30 dark:border-white/30"
                     >
                       <Trash2 className="w-4 h-4 mr-1" />
                       Excluir

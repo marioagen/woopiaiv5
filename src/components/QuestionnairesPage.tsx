@@ -652,10 +652,16 @@ export function QuestionnairesPage() {
             </div>
             {selectedQuestionnaires.length > 0 && (
               <BulkDeleteConfirmationDialog>
-                <Button variant="destructive" size="sm">
-                  <Trash2 className="w-4 h-4 mr-2" />
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 h-8 rounded-md px-3 text-sm font-medium text-white border border-[#8a1a27] transition-colors"
+                  style={{ backgroundColor: '#b22234' }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#8a1a27')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#b22234')}
+                >
+                  <Trash2 className="w-4 h-4" />
                   Excluir Selecionados ({selectedQuestionnaires.length})
-                </Button>
+                </button>
               </BulkDeleteConfirmationDialog>
             )}
           </div>
@@ -805,9 +811,15 @@ export function QuestionnairesPage() {
               </div>
               {selectedQuestionnaires.length > 0 && (
                 <BulkDeleteConfirmationDialog>
-                  <Button variant="destructive" size="sm">
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center h-8 w-8 rounded-md text-white border border-[#8a1a27] transition-colors"
+                    style={{ backgroundColor: '#b22234' }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#8a1a27')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#b22234')}
+                  >
                     <Trash2 className="w-4 h-4" />
-                  </Button>
+                  </button>
                 </BulkDeleteConfirmationDialog>
               )}
             </div>
