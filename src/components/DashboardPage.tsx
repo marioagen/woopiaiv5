@@ -172,6 +172,11 @@ export function DashboardPage() {
   const firstOfMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
   const lastOfMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
 
+  const maxDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const ninetyDaysAgo = new Date(today);
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+  const minDateStr = `${ninetyDaysAgo.getFullYear()}-${String(ninetyDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(ninetyDaysAgo.getDate()).padStart(2, '0')}`;
+
   const [customStart, setCustomStart] = useState(firstOfMonth);
   const [customEnd, setCustomEnd] = useState(lastOfMonth);
   const [appliedStart, setAppliedStart] = useState('');
@@ -310,8 +315,17 @@ export function DashboardPage() {
 
                 {/* Date picker dropdown */}
                 {showCustomPicker && (
-                  <div className="absolute top-full left-0 mt-1.5 z-50 w-[260px] rounded-xl border border-border bg-card shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95 slide-in-from-top-1 duration-150">
-                    <div className="px-4 pt-3.5 pb-1">
+                  <div className="absolute top-full left-0 mt-1.5 z-50 w-[340px] rounded-xl border border-border bg-card shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95 slide-in-from-top-1 duration-150 px-3">
+                    {/* 90-day limit warning */}
+                    <div className="mx-3 mt-3 flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 dark:border-amber-700/60 dark:bg-amber-900/20">
+                      <svg className="mt-px h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                      </svg>
+                      <p className="text-[12px] leading-snug text-amber-800 dark:text-amber-300">
+                        Período limitado somente aos últimos <span className="font-semibold">90 dias</span>
+                      </p>
+                    </div>
+                    <div className="px-4 pt-3 pb-1">
                       <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">Selecione as datas</p>
                     </div>
                     <div className="px-4 py-3 flex flex-col gap-3">
@@ -320,7 +334,8 @@ export function DashboardPage() {
                         <input
                           type="date"
                           value={customStart}
-                          max={customEnd || undefined}
+                          min={minDateStr}
+                          max={customEnd || maxDateStr}
                           onChange={e => setCustomStart(e.target.value)}
                           className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:border-ring transition-colors cursor-pointer [color-scheme:light] dark:[color-scheme:dark]"
                         />
@@ -330,7 +345,8 @@ export function DashboardPage() {
                         <input
                           type="date"
                           value={customEnd}
-                          min={customStart || undefined}
+                          min={customStart || minDateStr}
+                          max={maxDateStr}
                           onChange={e => setCustomEnd(e.target.value)}
                           className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:border-ring transition-colors cursor-pointer [color-scheme:light] dark:[color-scheme:dark]"
                         />
